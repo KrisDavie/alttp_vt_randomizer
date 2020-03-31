@@ -43,21 +43,28 @@ class FindabilityService
             'ProgressiveSword'
         ];
         
-        $progression_items = $all_items->filter(function ($item) use ($interesting_item_names) {
-            return in_array($item->getRawName(), $interesting_item_names);
-        });
-                
+        $locations = $world->getLocations();
+        
+        $progression_locations = [];        
+        foreach ($locations as $location) {
+            $item_name = $location->getItem()->getRawName();
+            if (in_array($item_name, $interesting_item_names)) {
+                array_push($progression_locations, $location);
+            }
+        }
+          
+        //triforce is interesting in the output lists but not as a key, it doesnt lead anywhere              
         array_push($interesting_item_names, "Triforce");
         
         
         $output_items = [];
-        //this counts thing doesn't actually work, there's only one copy of each progressive item in $progression_items :(
         $progressive_counts = ['ProgressiveBow' => 0,
                                'ProgressiveGlove' => 0,
                                'ProgressiveSword' => 0];
         
-        foreach ($progression_items as $item) {
-            $findable_items_coll = $world->getItemsFindableWithout($item);
+        foreach ($progression_locations as $location) {
+            $item = $location->getItem();
+            $findable_items_coll = $world->getItemsFindableWithoutLocation($location);
             $findable_items = $findable_items_coll->toArray();                        
                         
             $findable_item_names = [];
@@ -72,9 +79,10 @@ class FindabilityService
             $progressive = 'Progressive';
             
             if (substr($output_item_name, 0, strlen($progressive)) === $progressive) {
+                
                 $count = $progressive_counts[$output_item_name] + 1;
-                $output_item_name = $output_item_name . $count;
                 $progressive_counts[$output_item_name] = $count;
+                $output_item_name = $output_item_name . $count;                
             }
             
             $output_items[$output_item_name] = implode(", ", $good_found_items);

@@ -579,6 +579,26 @@ abstract class World
         } while ($found_items->count() > 0);
         return $my_items;
     }
+    
+    public function getItemsFindableWithoutLocation(Location $target_location) {
+            $my_items = $this->pre_collected_items;    
+            
+            $found_locations = new LocationCollection();
+            do {
+                $available_locations = $this->getCollectableLocations()->filter(function ($location) use ($my_items, $found_locations, $target_location) {
+                    return $location->hasItem()
+                        && !($location === $target_location)
+                        && !$found_locations->contains($location)
+                        && $location->canAccess($my_items);
+                });            
+    
+                $found_items = $available_locations->getItems();
+                $found_locations = $found_locations->merge($available_locations);
+    
+                $my_items = $my_items->merge($found_items);
+            } while ($found_items->count() > 0);
+            return $my_items;
+        }
 
     /**
      * Get Location in this world by name
