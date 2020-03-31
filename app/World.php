@@ -3,6 +3,7 @@
 namespace ALttP;
 
 use ALttP\Services\PlaythroughService;
+use ALttP\Services\FindabilityService;
 use ALttP\Support\ItemCollection;
 use ALttP\Support\LocationCollection;
 use ALttP\Support\ShopCollection;
@@ -557,6 +558,27 @@ abstract class World
 
         return $location_sphere;
     }
+    
+    //hyphen stats project
+    public function getItemsFindableWithout(Item $target_item) {
+        $my_items = $this->pre_collected_items;    
+        
+        $found_locations = new LocationCollection();
+        do {
+            $available_locations = $this->getCollectableLocations()->filter(function ($location) use ($my_items, $found_locations, $target_item) {
+                return $location->hasItem()
+                    && !$location->hasItem($target_item)
+                    && !$found_locations->contains($location)
+                    && $location->canAccess($my_items);
+            });            
+
+            $found_items = $available_locations->getItems();
+            $found_locations = $found_locations->merge($available_locations);
+
+            $my_items = $my_items->merge($found_items);
+        } while ($found_items->count() > 0);
+        return $my_items;
+    }
 
     /**
      * Get Location in this world by name
@@ -866,6 +888,8 @@ abstract class World
                 }
             }
             $this->spoiler['playthrough'] = (new PlaythroughService)->getPlayThrough($this);
+            //hyphen stats project
+            $this->spoiler['items_findable_without'] = (new FindabilityService)->getFindabilities($this);
         }
 
         $this->spoiler['meta'] = array_merge($this->spoiler['meta'] ?? [], $meta, [
