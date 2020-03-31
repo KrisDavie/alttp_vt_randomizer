@@ -169,15 +169,15 @@ class Randomize extends Command
             ]);
 
             $rand = new Randomizer([$world]);
-            $rand->randomize();
-
-            $world->writeToRom($rom);
-            $rom->muteMusic((bool) $this->option('no-music') ?? false);
-            $rom->setMenuSpeed($this->option('menu-speed'));
-
-            $output_file = sprintf($filename, $hash, 'sfc');
+            $rand->randomize();            
 
             if (!($this->option('no-rom') ?? false)) {
+                $world->writeToRom($rom);
+                $rom->muteMusic((bool) $this->option('no-music') ?? false);
+                $rom->setMenuSpeed($this->option('menu-speed'));
+    
+                $output_file = sprintf($filename, $hash, 'sfc');
+                
                 if ($this->option('sprite') && is_string($this->option('sprite')) && is_readable($this->option('sprite'))) {
                     $this->info("sprite");
                     try {
