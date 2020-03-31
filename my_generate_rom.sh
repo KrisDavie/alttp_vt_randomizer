@@ -1,0 +1,1 @@
+php artisan alttp:randomize --no-rom --spoiler --item_placement=advanced --accessibility=items --state=open --hints=off Zelda\ no\ Densetsu\ -\ Kamigami\ no\ Triforce\ \(Japan\)\ -\ backup\ clean.sfc myout
