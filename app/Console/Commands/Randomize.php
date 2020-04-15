@@ -11,6 +11,8 @@ use ALttP\World;
 use Hashids\Hashids;
 use Illuminate\Console\Command;
 
+use Illuminate\Support\Facades\DB;
+
 /**
  * Run randomizer as command.
  */
@@ -44,7 +46,8 @@ class Randomize extends Command
         . ' {--accessibility=item : set item/location accessibility}'
         . ' {--hints=on : set hints on or off}'
         . ' {--item_pool=normal : set item pool}'
-        . ' {--item_functionality=normal : set item functionality}';
+        . ' {--item_functionality=normal : set item functionality}'
+        . ' {--write-db-seed-data : write tons of info about the seed to postgres}';
 
     /**
      * The console command description.
@@ -56,6 +59,17 @@ class Randomize extends Command
     /** @var array */
     protected $reset_patch;
 
+
+
+    private function get_db_names($db, $tablename): array {
+        $ret = [];
+        $db_names = $db->select('select name,id from ' . $tablename);        
+        foreach ($db_names as $val) {
+            $ret[$val->name] = $val->id;    
+        }
+        return $ret;
+    }
+    
     /**
      * Execute the console command.
      *
@@ -105,14 +119,31 @@ class Randomize extends Command
             return 101;
         }
 
-        $bulk = (int) ($this->option('bulk') ?? 1);
+        //hyphen stats project
+        $known_hashes = [];
+        if($this->option('write-db-seed-data')) {
+            $db = DB::connection('pgsql');
+            $known_location_names = $this->get_db_names($db, 'location_names');
+            $known_item_names = $this->get_db_names($db, 'item_names');        
+            $db_hashes = $db->select('select hash from seeds');        
+            foreach ($db_hashes as $val) {
+                $known_hashes[$val->hash] = true;
+            } 
+        }
+        //print_r($known_hashes);
 
+        $bulk = (int) ($this->option('bulk') ?? 1);
         for ($i = 0; $i < $bulk; $i++) {
             Item::clearCache();
             Boss::clearCache();
             $rom = new Rom($this->argument('input_file'));
             $hash = $hasher->encode((int) (microtime(true) * 1000));
-
+            
+            if (array_key_exists($hash, $known_hashes)) {
+                $this->info("Skipping duplicate hash " . $hash);
+                continue;
+            }
+            
             if (!$this->option('skip-md5') && !$rom->checkMD5()) {
                 $rom->resize();
 
@@ -210,6 +241,25 @@ class Randomize extends Command
                 file_put_contents($spoiler_file, json_encode($world->getSpoiler(), JSON_PRETTY_PRINT));
                 $this->info(sprintf('Spoiler Saved: %s', $spoiler_file));
             }
+            
+            //hyphen stats project
+            if($this->option('write-db-seed-data')) {
+                if(array_key_exists($hash, $known_hashes)) {
+                    $this->info("Skipping duplicate hash " . $hash);
+                    continue;
+                }
+                $db->beginTransaction();
+                $bailOutFailure = !($world->writeToDb($db, $hash, $known_location_names, $known_item_names));
+                if ($bailOutFailure) {
+                    $this->info("Cancelling bulk job because of a previous stats db problem.");
+                    $db->rollBack();
+                    break;
+                } else {
+                    $db->commit();
+                }
+            }
+            
+            
         }
     }
 

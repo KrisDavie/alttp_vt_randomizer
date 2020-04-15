@@ -10,6 +10,8 @@ use ALttP\Support\ShopCollection;
 use ALttP\Sprite\Droppable;
 use ErrorException;
 
+use Illuminate\Support\Facades\DB;
+
 /**
  * This is the container for all the regions and locations one can find items
  * in the game.
@@ -560,14 +562,14 @@ abstract class World
     }
     
     //hyphen stats project
-    public function getItemsFindableWithout(Item $target_item) {
+    public function getItemsFindableWithoutLocation(Location $target_location) {
         $my_items = $this->pre_collected_items;    
         
         $found_locations = new LocationCollection();
         do {
-            $available_locations = $this->getCollectableLocations()->filter(function ($location) use ($my_items, $found_locations, $target_item) {
+            $available_locations = $this->getCollectableLocations()->filter(function ($location) use ($my_items, $found_locations, $target_location) {
                 return $location->hasItem()
-                    && !$location->hasItem($target_item)
+                    && !($location === $target_location)
                     && !$found_locations->contains($location)
                     && $location->canAccess($my_items);
             });            
@@ -580,25 +582,26 @@ abstract class World
         return $my_items;
     }
     
-    public function getItemsFindableWithoutLocation(Location $target_location) {
-            $my_items = $this->pre_collected_items;    
-            
-            $found_locations = new LocationCollection();
-            do {
-                $available_locations = $this->getCollectableLocations()->filter(function ($location) use ($my_items, $found_locations, $target_location) {
-                    return $location->hasItem()
-                        && !($location === $target_location)
-                        && !$found_locations->contains($location)
-                        && $location->canAccess($my_items);
-                });            
+    public function getLocationsFindableWithoutLocationName(string $target_location) {
+        $my_items = $this->pre_collected_items;    
+        
+        $found_locations = new LocationCollection();
+        do {
+            $available_locations = $this->getCollectableLocations()->filter(function ($location) use ($my_items, $found_locations, $target_location) {
+                return $location->hasItem()
+                    && !($location->getRawName() === $target_location)
+                    && !$found_locations->contains($location)
+                    && $location->canAccess($my_items);
+            });            
+
+            $found_items = $available_locations->getItems();
+            $found_locations = $found_locations->merge($available_locations);
+
+            $my_items = $my_items->merge($found_items);
+        } while ($found_items->count() > 0);
+        return $found_locations;
+    }
     
-                $found_items = $available_locations->getItems();
-                $found_locations = $found_locations->merge($available_locations);
-    
-                $my_items = $my_items->merge($found_items);
-            } while ($found_items->count() > 0);
-            return $my_items;
-        }
 
     /**
      * Get Location in this world by name
@@ -908,9 +911,11 @@ abstract class World
                 }
             }
             $this->spoiler['playthrough'] = (new PlaythroughService)->getPlayThrough($this);
-            //hyphen stats project
+            //hyphen stats project            
             $this->spoiler['items_findable_without'] = (new FindabilityService)->getFindabilities($this);
+            
         }
+                        
 
         $this->spoiler['meta'] = array_merge($this->spoiler['meta'] ?? [], $meta, [
             'item_placement' => $this->config('itemPlacement'),
@@ -964,6 +969,174 @@ abstract class World
 
         return $this->spoiler;
     }
+    
+    
+    
+    // hyphen stats project
+    // returns false if the db isnt set up right to match the locations/items we generated (bail out)
+    public function writeToDb($db, $seedhash, $known_location_names, $known_item_names): bool {      
+        
+        
+        //print_r($known_location_names);
+        //print_r($known_item_names);   
+        $progression_items = [
+            "ProgressiveBow1" => true,
+            "ProgressiveBow2" => true,
+            "Hookshot" => true,
+            "Mushroom" => true,
+            "Powder" => true,
+            "FireRod" => true,
+            "IceRod" => true,
+            "Bombos" => true,
+            "Ether" => true,
+            "Quake" => true,
+            "Lamp" => true,
+            "Hammer" => true,
+            "Shovel" => true,
+            "OcarinaInactive" => true,
+            "BookOfMudora" => true,
+            //todo: deal with the duplication issue on these
+//            "Bottle" => true,
+//            "BottleWithFairy" => true,
+//            "BottleWithRedPotion" => true,
+//            "BottleWithGreenPotion" => true,
+//            "BottleWithBluePotion" => true,
+//            "BottleWithBee" => true,
+//            "BottleWithGoldBee" => true,
+            "CaneOfSomaria" => true,
+            "CaneOfByrna" => true,
+            "Cape" => true,
+            "MagicMirror" => true,
+            "PegasusBoots" => true,
+            "ProgressiveGlove1" => true,
+            "ProgressiveGlove2" => true,
+            "Flippers" => true,
+            "MoonPearl" => true,
+            "ProgressiveSword1" => true,
+            "ProgressiveSword2" => true,
+            "ProgressiveSword3" => true,
+            "ProgressiveSword4" => true,
+            "HalfMagic" => true,
+            "DefeatAgahnim" => true
+        ];
+        
+    
+                 
+        $progressive_counts = ['ProgressiveBow' => 0,
+                               'ProgressiveGlove' => 0,
+                               'ProgressiveSword' => 0,
+                               'ProgressiveShield' => 0,
+                               'ProgressiveArmor' => 0];
+        $all_locations = [];
+        $location_items = [];        
+        $real_collectable_location_items = [];
+        foreach ($this->getRegions() as $region) {
+            foreach ($region->getLocations() as $location) {
+                array_push($all_locations, $location);               
+                if ($location->hasItem() && !$location instanceof Location\Trade) {
+                    $item = $location->getItem();   
+                    $item_name = $item->getRawName();
+                    if ($item_name === "UncleSword") $item_name = "ProgressiveSword";
+                    if(array_key_exists($item_name, $progressive_counts)) {
+                        $progressive_counts[$item_name] += 1;
+                        $item_name = $item_name . $progressive_counts[$item_name];
+                    }
+                    $location_items[$location->getRawName()] = $item_name;  
+                    if (! ($location instanceof Location\Medallion)) {
+                        $real_collectable_location_items[$location->getRawName()] = $item_name;      
+                    }
+                                      
+                } else { //no item there
+                   $location_items[$location->getRawName()] = "Nothing";
+                }                 
+            }                
+        }
+        $insert_seed = $db->getPdo()->prepare(
+            'insert into seeds (hash) values (:hash) returning id');
+        $insert_seed->bindValue(":hash", $seedhash);
+        
+        $insert_seed->execute();
+        $new_seed_id = $insert_seed->fetchAll()[0]['id'];
+                
+        
+        $insert_placement = $db->getPdo()->prepare(
+            'insert into placements (seed_id, location_id, item_id, sphere, required) values ' . 
+            '(:seed_id, :location_id, :item_id, :sphere, :required)');
+        $insert_findable_without = $db->getPdo()->prepare(
+            'insert into findable_without (seed_id, item, items, locations) values ' .
+            '(:seed_id, :item, :items, :locations)');                       
+       
+        
+        foreach($location_items as $location_name => $item_name) {
+            if (!array_key_exists($location_name, $known_location_names)) {
+                print("Unknown location: " . $location_name . "\n");
+                return false;
+                
+            }
+            if (!array_key_exists($item_name, $known_item_names)) {
+                print("Unknown item: " . $item_name . "\n");
+                return false;
+            }
+            
+            $required_item = false;
+              
+            //do findability stuff. 
+            if(   array_key_exists($item_name, $progression_items) 
+               && array_key_exists($location_name, $real_collectable_location_items)) {
+                $findable_item_bitstring = str_repeat("0", count($known_item_names));
+                $findable_location_bitstring = str_repeat("0", count($known_location_names));
+                           
+
+                $findable_locs_coll = $this->getLocationsFindableWithoutLocationName($location_name);
+                $findable_locs = $findable_locs_coll->toArray();       
+                $findable_item_ids = [];
+                $findable_location_ids = [];
+                $required_item = true;
+                foreach($findable_locs as $found_location) {
+                    $findable_location_name = $found_location->getRawName();    
+                    if(array_key_exists($location_name, $known_location_names)) {  
+                        $loc_id = $known_location_names[$location_name];
+                        $findable_location_bitstring[$loc_id - 1] = 1;
+                                 
+                        $findable_item_name = $location_items[$location_name];
+                        if ($findable_item_name === "Triforce") {
+                            $required_item = false;
+                        }
+                        $item_id = $known_item_names[$findable_item_name];
+                        $findable_item_bitstring[$item_id - 1] = 1;
+                    }
+                }   
+                //print($item_name . "\n");    
+                $insert_findable_without->bindValue(":seed_id", $new_seed_id);
+                $insert_findable_without->bindValue(":item", $known_item_names[$item_name]);
+                $insert_findable_without->bindValue(":items",  $findable_item_bitstring);
+                $insert_findable_without->bindValue(":locations", $findable_location_bitstring );
+                $insert_findable_without->execute();    
+                                                  
+            } 
+            
+            //todo: sphere
+            
+            $insert_placement->bindValue(':seed_id', $new_seed_id);
+            $insert_placement->bindValue(':location_id', $known_location_names[$location_name]);
+            $insert_placement->bindValue(':item_id', $known_item_names[$item_name]);
+            $insert_placement->bindValue(':sphere', 0);
+            $insert_placement->bindValue(':required', ($required_item ? 1 : 0));
+            $insert_placement->execute();
+                                    
+            
+        }
+        
+        
+        
+        
+        
+        
+        return true;
+        
+        //print_r($location_items);                                                                                                                                                           
+    }
+    
 
     /**
      * Set an override patch to write to the rom, in case randomization was done
