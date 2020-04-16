@@ -976,9 +976,7 @@ abstract class World
     // returns false if the db isnt set up right to match the locations/items we generated (bail out)
     public function writeToDb($db, $seedhash, $known_location_names, $known_item_names): bool {      
         
-        
-        //print_r($known_location_names);
-        //print_r($known_item_names);   
+         
         $progression_items = [
             "ProgressiveBow1" => true,
             "ProgressiveBow2" => true,
@@ -1019,7 +1017,7 @@ abstract class World
             "HalfMagic" => true,
             "DefeatAgahnim" => true
         ];
-        
+            
     
                  
         $progressive_counts = ['ProgressiveBow' => 0,
@@ -1066,7 +1064,20 @@ abstract class World
             'insert into findable_without (seed_id, item, items, locations) values ' .
             '(:seed_id, :item, :items, :locations)');                       
        
-        
+       
+       
+        $spheres_to_locs = $this->getLocationSpheres();
+        $location_to_sphere = [];
+        foreach ($spheres_to_locs as $sphere => $sphere_loc_coll) {
+            $sphere_locs = $sphere_loc_coll->toArray();
+            foreach ($sphere_locs as $loc) {
+                $loc_name = $loc->getRawName();
+                if (!array_key_exists($loc_name, $location_to_sphere)) {
+                    $location_to_sphere[$loc_name] = $sphere;
+                }
+            }
+        }
+                
         foreach($location_items as $location_name => $item_name) {
             if (!array_key_exists($location_name, $known_location_names)) {
                 print("Unknown location: " . $location_name . "\n");
@@ -1092,21 +1103,22 @@ abstract class World
                 $findable_item_ids = [];
                 $findable_location_ids = [];
                 $required_item = true;
-                foreach($findable_locs as $found_location) {
-                    $findable_location_name = $found_location->getRawName();    
-                    if(array_key_exists($location_name, $known_location_names)) {  
-                        $loc_id = $known_location_names[$location_name];
+                
+                foreach($findable_locs as $found_location) {                
+                    $findable_location_name = $found_location->getRawName();   
+                    if(array_key_exists($findable_location_name, $known_location_names)) {                          
+                        $loc_id = $known_location_names[$findable_location_name];
                         $findable_location_bitstring[$loc_id - 1] = 1;
                                  
-                        $findable_item_name = $location_items[$location_name];
+                        $findable_item_name = $location_items[$findable_location_name];
                         if ($findable_item_name === "Triforce") {
                             $required_item = false;
                         }
                         $item_id = $known_item_names[$findable_item_name];
                         $findable_item_bitstring[$item_id - 1] = 1;
+
                     }
-                }   
-                //print($item_name . "\n");    
+                }    
                 $insert_findable_without->bindValue(":seed_id", $new_seed_id);
                 $insert_findable_without->bindValue(":item", $known_item_names[$item_name]);
                 $insert_findable_without->bindValue(":items",  $findable_item_bitstring);
@@ -1115,26 +1127,25 @@ abstract class World
                                                   
             } 
             
-            //todo: sphere
             
+            
+            $sphere = -1;
+            if (array_key_exists($location_name, $location_to_sphere)) {
+                $sphere = $location_to_sphere[$location_name];
+            }
             $insert_placement->bindValue(':seed_id', $new_seed_id);
             $insert_placement->bindValue(':location_id', $known_location_names[$location_name]);
             $insert_placement->bindValue(':item_id', $known_item_names[$item_name]);
-            $insert_placement->bindValue(':sphere', 0);
+            $insert_placement->bindValue(':sphere', $sphere);
             $insert_placement->bindValue(':required', ($required_item ? 1 : 0));
             $insert_placement->execute();
                                     
             
-        }
-        
-        
-        
-        
-        
+        }                      
+                
         
         return true;
-        
-        //print_r($location_items);                                                                                                                                                           
+                                                                                                                                                               
     }
     
 
