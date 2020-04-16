@@ -1,3 +1,9 @@
+This is a fork of the zelda randomizer for the purpose of dumping data to a postgres
+database for statistical analysis. It's more convenient to do this directly inside the randomizer
+code.
+
+How to set it up:
+
 step 1: install and run postgresql somewhere. i do it in a linux vm.
 
 step 2: create a user and database in postgres. (i suggest naming them both rando)
