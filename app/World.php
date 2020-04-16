@@ -1061,8 +1061,8 @@ abstract class World
             'insert into placements (seed_id, location_id, item_id, sphere, required) values ' . 
             '(:seed_id, :location_id, :item_id, :sphere, :required)');
         $insert_findable_without = $db->getPdo()->prepare(
-            'insert into findable_without (seed_id, item, items, locations) values ' .
-            '(:seed_id, :item, :items, :locations)');                       
+            'insert into findable_without (seed_id, item_id, items, locations) values ' .
+            '(:seed_id, :item_id, :items, :locations)');                       
        
        
        
@@ -1120,7 +1120,7 @@ abstract class World
                     }
                 }    
                 $insert_findable_without->bindValue(":seed_id", $new_seed_id);
-                $insert_findable_without->bindValue(":item", $known_item_names[$item_name]);
+                $insert_findable_without->bindValue(":item_id", $known_item_names[$item_name]);
                 $insert_findable_without->bindValue(":items",  $findable_item_bitstring);
                 $insert_findable_without->bindValue(":locations", $findable_location_bitstring );
                 $insert_findable_without->execute();    

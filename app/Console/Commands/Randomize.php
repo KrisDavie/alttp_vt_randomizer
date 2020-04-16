@@ -123,8 +123,8 @@ class Randomize extends Command
         $known_hashes = [];
         if($this->option('write-db-seed-data')) {
             $db = DB::connection('pgsql');
-            $known_location_names = $this->get_db_names($db, 'location_names');
-            $known_item_names = $this->get_db_names($db, 'item_names');        
+            $known_location_names = $this->get_db_names($db, 'locations');
+            $known_item_names = $this->get_db_names($db, 'items');        
             $db_hashes = $db->select('select hash from seeds');        
             foreach ($db_hashes as $val) {
                 $known_hashes[$val->hash] = true;

@@ -1,0 +1,1 @@
+php artisan alttp:randomize --no-music --heartbeep=off --item_placement=advanced --accessibility=items --state=open --glitches=none --weapons=randomized --hints=off --write-db-seed-data lttp.sfc myout
