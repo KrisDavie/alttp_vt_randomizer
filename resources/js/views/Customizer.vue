@@ -223,7 +223,7 @@
                     :disabled="generating"
                     class="btn btn-success"
                     @click="applySpoilerSeed"
-                  >{{ $t('randomizer.generate.race') }}</button>
+                  >{{ $t('randomizer.generate.casual') }}</button>
                 </div>
               </div>
               <div class="col-md">
@@ -275,13 +275,18 @@
                     >
                       <button
                         class="btn btn-success text-center"
+                        :disabled="disableSaveRomButton"
                         @click="saveRom"
                       >{{ $t('randomizer.details.save_rom') }}</button>
                     </div>
                   </div>
                 </div>
                 <div v-if="this.endpoint == '/api/customizer'" class="row">
-                  <vt-rom-settings class="col-12" :rom="rom"></vt-rom-settings>
+                  <vt-rom-settings
+                    class="col-12"
+                    :rom="rom"
+                    @disallow-save-rom="disallowSaveRom"
+                  ></vt-rom-settings>
                 </div>
               </div>
             </div>
@@ -379,6 +384,7 @@ export default {
       romLoaded: false,
       current_rom_hash: "",
       gameLoaded: false,
+      disableSaveRomButton: false,
       endpoint: "/api/customizer",
       choice: {
         name: "",
@@ -453,6 +459,9 @@ export default {
     });
   },
   methods: {
+    disallowSaveRom(e) {
+      this.disableSaveRomButton = Boolean(e);
+    },
     ...mapActions("randomizer", [
       "setPreset",
       "setGlitchesRequired",
@@ -559,7 +568,7 @@ export default {
                     response.data.current_rom_hash &&
                     response.data.current_rom_hash != this.current_rom_hash
                   ) {
-                    // The base rom has been updated. or test call
+                    // The base ROM has been updated. or test call
                     window.location.reload(true);
                   }
 
@@ -597,7 +606,10 @@ export default {
       return this.rom.save(this.rom.downloadFilename() + ".sfc", {
         quickswap: this.quickswap,
         paletteShuffle: this.paletteShuffle,
-        musicOn: this.musicOn
+        musicOn: this.musicOn,
+        msu1Resume: this.msu1Resume,
+        reduceFlashing: this.reduceFlashing,
+        shuffleSfx: this.shuffleSfx
       });
     },
     saveSpoiler() {
@@ -761,7 +773,10 @@ export default {
       heartColor: state => state.heartColor,
       quickswap: state => state.quickswap,
       musicOn: state => state.musicOn,
-      paletteShuffle: state => state.paletteShuffle
+      msu1Resume: state => state.msu1Resume,
+      paletteShuffle: state => state.paletteShuffle,
+      reduceFlashing: state => state.reduceFlashing,
+      shuffleSfx: state => state.shuffleSfx
     }),
     flatItemPool() {
       return this.$store.getters["itemLocations/flatItemPool"];

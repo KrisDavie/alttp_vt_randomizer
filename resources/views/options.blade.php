@@ -59,8 +59,6 @@
         </div>
     </div>
 
-    <ins class="adsbygoogle" style="display:inline-block;width:100%;height:90px" data-ad-client="ca-pub-5161309967767506" data-ad-slot="9849787408"></ins>
-
     <div class="card border-info mt-4">
         <a class="anchor" id="goal"></a>
         <div class="card-header bg-info">
@@ -365,7 +363,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <ul>
-                        <li>10x Big Key</li>
+                        <li>11x Big Key</li>
                         <li>1x Bombos</li>
                         <li>1x Book Of Mudora</li>
                         <li>1x Boomerang</li>
@@ -384,7 +382,7 @@
                         <li>11x Heart Container</li>
                         <li>1x Hookshot</li>
                         <li>1x Ice Rod</li>
-                        <li>28x Small Key</li>
+                        <li>29x Small Key</li>
                         <li>1x Lamp</li>
                         <li>1x Magic Cape</li>
                         <li>1x Magic Mirror</li>
@@ -426,12 +424,4 @@
         </div>
     </div>
 </div>
-
-<script>
-new Vue({
-    el: '#options',
-    i18n: i18n,
-    store: cStore,
-});
-</script>
 @overwrite

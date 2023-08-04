@@ -90,6 +90,12 @@ export default {
         pickedSprite = vm.sprites[0];
       }
 
+      if (pickedSprite.name === "Load Custom Sprite") {
+        vm.$emit('load-custom-sprite', true);
+        return;
+      }
+      vm.$emit('load-custom-sprite', false);
+
       while (pickedSprite.file === null) {
         pickedSprite =
           vm.sprites[Math.floor(Math.random() * vm.sprites.length)];
@@ -127,7 +133,7 @@ export default {
               reject("cannot find sprite file");
             });
         });
-      }).then(rom.parseSprGfx);
+      }).then(rom.parseSprGfx.bind(rom));
     }
   },
   computed: {
@@ -144,13 +150,13 @@ export default {
   font-size: 1.1rem;
   padding-top: 0.2rem;
 }
-.sprite-selector >>> .multiselect__single {
+.sprite-selector :deep(.multiselect__single) {
   margin-bottom: 5px;
 }
-.sprite-selector >>> .multiselect__option {
+.sprite-selector :deep(.multiselect__option) {
   line-height: 24px;
 }
-.sprite-selector >>> .multiselect__tags {
+.sprite-selector :deep(.multiselect__tags) {
   border: none;
   padding-top: 7px;
 }

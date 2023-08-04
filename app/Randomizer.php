@@ -5,6 +5,7 @@ namespace ALttP;
 use ALttP\Contracts\Randomizer as RandomizerContract;
 use ALttP\Services\HintService;
 use ALttP\Support\ItemCollection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -102,6 +103,7 @@ class Randomizer implements RandomizerContract
             case 'ganon':
             case 'fast_ganon':
             case 'dungeons':
+            case 'ganonhunt':
                 $world->getLocation("Ganon")->setItem(Item::get('Triforce', $world));
                 break;
         }
@@ -112,7 +114,7 @@ class Randomizer implements RandomizerContract
         $trash_items = $world->getItemPool();
 
         // @todo check a flag instead of logic here, as well as difficulty
-        if (in_array($world->config('logic'), ['MajorGlitches', 'OverworldGlitches', 'None']) && $world->config('difficulty') !== 'custom') {
+        if (in_array($world->config('logic'), ['MajorGlitches', 'HybridMajorGlitches', 'OverworldGlitches', 'NoLogic']) && $world->config('difficulty') !== 'custom') {
             $world->addPreCollectedItem(Item::get('PegasusBoots', $world));
             foreach ($advancement_items as $key => $item) {
                 if ($item == Item::get('PegasusBoots', $world)) {
@@ -260,7 +262,7 @@ class Randomizer implements RandomizerContract
             if (count($nice_items_swords)) {
                 array_push($advancement_items, array_pop($nice_items_swords));
             }
-            
+
             // put tempered sword back in if logically required
             if ($world->config('region.requireBetterSword', false) && count($nice_items_swords)) {
                 array_push($advancement_items, array_pop($nice_items_swords));
@@ -314,7 +316,8 @@ class Randomizer implements RandomizerContract
         }
         if ($world->config('region.wildKeys', false)) {
             foreach ($dungeon_items as $key => $item) {
-                if ($item instanceof Item\Key && ($world->config('mode.state') != 'standard' || $item != Item::get('KeyH2', $world))) {
+                if ($item instanceof Item\Key && ($world->config('mode.state') !== 'standard' || $item != Item::get('KeyH2', $world)
+                    || $world->config('logic') === 'NoLogic')) {
                     unset($dungeon_items[$key]);
                     $advancement_items[] = $item;
                 }
@@ -370,7 +373,7 @@ class Randomizer implements RandomizerContract
         ];
 
         if ($world->config('mode.weapons') == 'swordless') {
-            array_splice($boss_locations, 8, 1); // remove Ice Palace
+            array_splice($boss_locations, 9, 1); // remove Ice Palace
             $world->getRegion('Ice Palace')->setBoss(Boss::get("Kholdstare", $world));
         }
 
@@ -683,18 +686,18 @@ class Randomizer implements RandomizerContract
         });
 
         // handle hardmode shops
-        switch ($world->config('rom.HardMode', 0)) {
-            case 1:
-            case 2:
-            case 3:
-                $world->getShop("Capacity Upgrade")->clearInventory();
-                $world->getShop("Dark World Potion Shop")->addInventory(1, Item::get('Nothing', $world), 0);
-                $world->getShop("Dark World Forest Shop")->addInventory(0, Item::get('Nothing', $world), 0);
-                $world->getShop("Dark World Lumberjack Hut Shop")->addInventory(1, Item::get('Nothing', $world), 0);
-                $world->getShop("Dark World Outcasts Shop")->addInventory(1, Item::get('Nothing', $world), 0);
-                $world->getShop("Dark World Lake Hylia Shop")->addInventory(1, Item::get('Nothing', $world), 0);
-
-                break;
+        if ($world->config('shops.HardMode', false)) {
+            $world->getShop("Capacity Upgrade")->clearInventory();
+        }
+        $shield_replacement = Item::get($world->config('item.overflow.replacement.Shield', 'TwentyRupees2'), $world);
+        if ($world->config('item.overflow.count.Shield', 3) < 2) {
+            $world->getShop("Dark World Forest Shop")->addInventory(0, $shield_replacement, 500);
+        }
+        if ($world->config('item.overflow.count.Shield', 3) < 1) {
+            $world->getShop("Dark World Potion Shop")->addInventory(1, $shield_replacement, 50);
+            $world->getShop("Dark World Lumberjack Hut Shop")->addInventory(1, $shield_replacement, 50);
+            $world->getShop("Dark World Outcasts Shop")->addInventory(1, $shield_replacement, 50);
+            $world->getShop("Dark World Lake Hylia Shop")->addInventory(1, $shield_replacement, 50);
         }
 
         if (
@@ -751,16 +754,11 @@ class Randomizer implements RandomizerContract
                 }
             }
 
-            switch ($world->config('rom.HardMode', 0)) {
-                case 1:
-                case 2:
-                case 3:
-                    $world->getShop("Capacity Upgrade")->clearInventory();
-
-                    break;
-                default:
-                    $world->getShop("Capacity Upgrade")->clearInventory()
-                        ->addInventory(0, Item::get('BombUpgrade5', $world), 100, 7);
+            if ($world->config('shops.HardMode', false)) {
+                $world->getShop("Capacity Upgrade")->clearInventory();
+            } else {
+                $world->getShop("Capacity Upgrade")->clearInventory()
+                    ->addInventory(0, Item::get('BombUpgrade5', $world), 100, 7);
             }
         }
     }
@@ -774,31 +772,31 @@ class Randomizer implements RandomizerContract
      */
     public function randomizeCredits(World $world)
     {
-        $world->setCredit('castle', array_first(fy_shuffle([
+        $world->setCredit('castle', Arr::first(fy_shuffle([
             "the return of the king",
             "fellowship of the ring",
             "the two towers",
         ])));
 
-        $world->setCredit('sanctuary', array_first(fy_shuffle([
+        $world->setCredit('sanctuary', Arr::first(fy_shuffle([
             "the loyal priest",
             "read a book",
             "sits in own pew",
             "heal plz",
         ])));
 
-        $name = array_first(fy_shuffle([
+        $name = Arr::first(fy_shuffle([
             "sahasralah", "sabotaging", "sacahuista", "sacahuiste", "saccharase", "saccharide", "saccharify",
             "saccharine", "saccharins", "sacerdotal", "sackcloths", "salmonella", "saltarelli", "saltarello",
             "saltations", "saltbushes", "saltcellar", "saltshaker", "salubrious", "sandgrouse", "sandlotter",
             "sandstorms", "sandwiched", "sauerkraut", "schipperke", "schismatic", "schizocarp", "schmalzier",
             "schmeering", "schmoosing", "shibboleth", "shovelnose", "sahananana", "sarararara", "salamander",
             "sharshalah", "shahabadoo", "sassafrass", "saddlebags", "sandalwood", "shagadelic", "sandcastle",
-            "saltpeters", "shabbiness", "shlrshlrsh", "sassyralph", "sallyacorn",
+            "saltpeters", "shabbiness", "shlrshlrsh", "sassyralph", "sallyacorn", "sahasrahbot", "sasharalla",
         ]));
         $world->setCredit('kakariko', "$name's homecoming");
 
-        $world->setCredit('lumberjacks', array_first(fy_shuffle([
+        $world->setCredit('lumberjacks', Arr::first(fy_shuffle([
             "twin lumberjacks",
             "fresh flapjacks",
             "two woodchoppers",
@@ -814,19 +812,19 @@ class Randomizer implements RandomizerContract
                 break;
         }
 
-        $world->setCredit('bridge', array_first(fy_shuffle([
+        $world->setCredit('bridge', Arr::first(fy_shuffle([
             "the lost old man",
             "gary the old man",
             "Your ad here",
         ])));
 
-        $world->setCredit('woods', array_first(fy_shuffle([
+        $world->setCredit('woods', Arr::first(fy_shuffle([
             "the forest thief",
             "dancing pickles",
             "flying vultures",
         ])));
 
-        $world->setCredit('well', array_first(fy_shuffle([
+        $world->setCredit('well', Arr::first(fy_shuffle([
             "venus. queen of faeries",
             "Venus was her name",
             "I'm your Venus",
@@ -867,26 +865,41 @@ class Randomizer implements RandomizerContract
                 'tavern_man' => $this->getTextArray('strings/tavern_man.txt'),
                 'blind' => $this->getTextArray('strings/blind.txt'),
                 'ganon_1' => $this->getTextArray('strings/ganon_1.txt'),
+                'ganon_phase_3_no_silvers' => $this->getTextArray('strings/ganon_phase_3_no_silvers.txt'),
                 'triforce' => $this->getTextArray('strings/triforce.txt'),
             ];
         });
 
-        $boots_location = $world->getLocationsWithItem(Item::get('PegasusBoots', $world))->first();
+        if ($world instanceof World\Standard) {
+            $boots_location = $world->getLocationsWithItem(Item::get('PegasusBoots', $world))->first();
 
-        if ($world->config('spoil.BootsLocation', false) && $boots_location) {
-            Log::info('Boots revealed');
-            switch ($boots_location->getName()) {
-                case "Link's House":
-                    $world->setText('uncle_leaving_text', "Lonk!\nYou'll never\nfind the boots");
-                    break;
-                case "Maze Race":
-                    $world->setText('uncle_leaving_text', "Boots at race?\nSeed confirmed\nimpossible.");
-                    break;
-                default:
-                    $world->setText('uncle_leaving_text', "Lonk! Boots\nare in the\n" . $boots_location->getRegion()->getName());
+            if ($world->config('spoil.BootsLocation', false)) {
+                Log::info('Boots revealed');
+                if ($world->getPreCollectedItems()->has('PegasusBoots')) {
+                    $uncleBootsText = "Lonk! Boots\nare on\nyour feet.";
+                } else if (!$boots_location) {
+                    $uncleBootsText = "I couldn't\nfind the Boots\ntoday.\nRIP me.";
+                } else {
+                    $uncleBootsText = "Lonk! Boots\nare in the\n" . $boots_location->getRegion()->getName();
+                    switch ($boots_location->getName()) {
+                        case "Link's House:" . $world->id:
+                            $uncleBootsText = "Lonk!\nYou'll never\nfind the boots.";
+                            break;
+                        case "Maze Race:" . $world->id:
+                            $uncleBootsText = "Boots at race?\nSeed confirmed\nimpossible.";
+                            break;
+                        case "Link's Uncle:" . $world->id:
+                            $uncleBootsText = "Ganon offered\nme the Boots.\nTime to run!";
+                            break;
+                    }
+                }
+                $world->setText('uncle_leaving_text', $uncleBootsText);
+                $world->setText('sign_east_of_links_house', $uncleBootsText);
+            } else {
+                $world->setText('uncle_leaving_text', Arr::first(fy_shuffle($strings['uncle'])));
             }
         } else {
-            $world->setText('uncle_leaving_text', array_first(fy_shuffle($strings['uncle'])));
+            $world->setText('uncle_leaving_text', Arr::first(fy_shuffle($strings['uncle'])));
         }
 
         $green_pendant_location = $world->getLocationsWithItem(Item::get('PendantOfCourage', $world))->first();
@@ -904,36 +917,25 @@ class Randomizer implements RandomizerContract
             . $crystal6_location->getRegion()->getName()
             . "\nso I can make\na big bomb!");
 
-        $world->setText('blind_by_the_light', array_first(fy_shuffle($strings['blind'])));
+        $world->setText('blind_by_the_light', Arr::first(fy_shuffle($strings['blind'])));
 
-        $world->setText('kakariko_tavern_fisherman', array_first(fy_shuffle($strings['tavern_man'])));
+        $world->setText('kakariko_tavern_fisherman', Arr::first(fy_shuffle($strings['tavern_man'])));
 
-        $world->setText('ganon_fall_in', array_first(fy_shuffle($strings['ganon_1'])));
+        $world->setText('ganon_fall_in', Arr::first(fy_shuffle($strings['ganon_1'])));
 
         $world->setText('ganon_phase_3_alt', "Got wax in\nyour ears?\nI cannot die!");
 
+        // bow hint and handling
+        // @todo this swap of item really shouldn't happen here, we don't know
+        // for sure that the items haven't already been written to the ROM.
         $silver_arrows_location = $world->getLocationsWithItem(Item::get('SilverArrowUpgrade', $world))->first();
         if (!$silver_arrows_location) {
             $silver_arrows_location = $world->getLocationsWithItem(Item::get('BowAndSilverArrows', $world))->first();
         }
 
-        if (!$silver_arrows_location) {
-            $world->setText('ganon_phase_3_no_silvers', "Did you find\nthe arrows on\nPlanet Zebes?");
-        } else {
-            switch ($silver_arrows_location->getRegion()->getName()) {
-                case "Ganons Tower":
-                    $world->setText('ganon_phase_3_no_silvers', "Did you find\nthe arrows in\nMy tower?");
-                    break;
-                default:
-                    $world->setText('ganon_phase_3_no_silvers', "Did you find\nthe arrows in\n" . $silver_arrows_location->getRegion()->getName());
-            }
-        }
-
-        // progressive bow hint and handling
-        // @todo this swap of item really shouldn't happen here, we don't know
-        // for sure that the items haven't already been written to the rom.
         $progressive_bow_locations = $world->getLocationsWithItem(Item::get('ProgressiveBow', $world))->randomCollection(2);
-        if ($progressive_bow_locations->count() > 0) {
+
+        if ($progressive_bow_locations->count() >= 2 && $world->config('item.overflow.count.Bow', 2) >= 2) {
             $first_location = $progressive_bow_locations->pop();
             switch ($first_location->getRegion()->getName()) {
                 case "Ganons Tower":
@@ -941,30 +943,36 @@ class Randomizer implements RandomizerContract
                     break;
                 default:
                     $world->setText('ganon_phase_3_no_silvers', "Did you find\nthe arrows in\n" . $first_location->getRegion()->getName());
-                }
+            }
             // Progressive Bow Alternate
             $first_location->setItem(new Item\Bow('ProgressiveBow', [0x65], $world));
 
-            if ($progressive_bow_locations->count() > 0) {
-                $second_location = $progressive_bow_locations->pop();
-                switch ($second_location->getRegion()->getName()) {
-                    case "Ganons Tower":
-                        $world->setText('ganon_phase_3_no_silvers_alt', "Did you find\nthe arrows in\nMy tower?");
+            $second_location = $progressive_bow_locations->pop();
+            switch ($second_location->getRegion()->getName()) {
+                case "Ganons Tower":
+                    $world->setText('ganon_phase_3_no_silvers_alt', "Did you find\nthe arrows in\nMy tower?");
                     break;
-                    default:
-                        $world->setText('ganon_phase_3_no_silvers_alt', "Did you find\nthe arrows in\n" . $second_location->getRegion()->getName());
-                }
+                default:
+                    $world->setText('ganon_phase_3_no_silvers_alt', "Did you find\nthe arrows in\n" . $second_location->getRegion()->getName());
             }
-            // Remove Hint in Hard+ Item Pool
-            if ($world->config('item.overflow.count.Bow') < 2) {
-                $world->setText('ganon_phase_3_no_silvers', "Did you find\nthe arrows on\nPlanet Zebes?");
-                $world->setText('ganon_phase_3_no_silvers_alt', "Did you find\nthe arrows on\nPlanet Zebes?");
-                // Special No Silvers "Hint" for Crowd Control
-                if ($world->config('item.pool') == 'crowd_control') {
-                    $world->setText('ganon_phase_3_no_silvers', "Chat said no\nto Silvers.\nIt's over Hero");
-                    $world->setText('ganon_phase_3_no_silvers_alt', "Chat said no\nto Silvers.\nIt's over Hero");
-                }
+        } elseif ($silver_arrows_location) {
+            switch ($silver_arrows_location->getRegion()->getName()) {
+                case "Ganons Tower":
+                    $world->setText('ganon_phase_3_no_silvers', "Did you find\nthe arrows in\nMy tower?");
+                    $world->setText('ganon_phase_3_no_silvers_alt', "Did you find\nthe arrows in\nMy tower?");
+                    break;
+                default:
+                    $world->setText('ganon_phase_3_no_silvers', "Did you find\nthe arrows in\n" . $silver_arrows_location->getRegion()->getName());
+                    $world->setText('ganon_phase_3_no_silvers_alt', "Did you find\nthe arrows in\n" . $silver_arrows_location->getRegion()->getName());
             }
+        } else {
+            $fake_silvers_hint = Arr::first(fy_shuffle($strings['ganon_phase_3_no_silvers']));
+            if ($world->config('item.pool', 'normal') === 'crowd_control') {
+                $fake_silvers_hint = "Chat said no\nto Silvers.\nIt's over Hero";
+            }
+
+            $world->setText('ganon_phase_3_no_silvers', $fake_silvers_hint);
+            $world->setText('ganon_phase_3_no_silvers_alt', $fake_silvers_hint);
         }
 
         if ($world->config('crystals.tower') < 7) {
@@ -972,13 +980,39 @@ class Randomizer implements RandomizerContract
             $tower_require = sprintf($tower_string, $world->config('crystals.tower'));
             $world->setText('sign_ganons_tower', $tower_require);
         }
-        if ($world->config('crystals.ganon') < 7) {
-            $ganon_string = $world->config('crystals.ganon') == 1 ? 'You need %d crystal to beat Ganon.' : 'You need %d crystals to beat Ganon.';
-            $ganon_require = sprintf($ganon_string, $world->config('crystals.ganon'));
-            $world->setText('sign_ganon', $ganon_require);
-        }
 
         switch ($world->config('goal')) {
+            case 'ganon':
+                $ganon_crystals_singular = 'To beat Ganon you must collect %d Crystal and defeat his minion at the top of his tower.';
+                $ganon_crystals_plural = 'To beat Ganon you must collect %d Crystals and defeat his minion at the top of his tower.';
+                break;
+            default:
+                $ganon_crystals_singular = 'You need %d Crystal to beat Ganon.';
+                $ganon_crystals_plural = 'You need %d Crystals to beat Ganon.';
+                break;
+        }
+
+        $ganon_string = $world->config('crystals.ganon') == 1 ? $ganon_crystals_singular : $ganon_crystals_plural;
+
+        switch ($world->config('goal')) {
+            case 'ganon':
+                $ganon_require = sprintf($ganon_string, $world->config('crystals.ganon'));
+                $world->setText('sign_ganon', $ganon_require);
+                $world->setText('ganon_fall_in_alt', "You think you\nare ready to\nface me?\n\nI will not die\n\nunless you\ncomplete your\ngoals. Dingus!");
+
+                break;
+            case 'fast_ganon':
+                $ganon_require = sprintf($ganon_string, $world->config('crystals.ganon'));
+                $world->setText('sign_ganon', $ganon_require);
+                $world->setText('ganon_fall_in_alt', "You think you\nare ready to\nface me?\n\nI will not die\n\nunless you\ncomplete your\ngoals. Dingus!");
+
+                break;
+            case 'ganonhunt':
+                $ganon_require = sprintf('To beat Ganon you must collect %d Triforce Pieces.', $world->config('item.Goal.Required'));
+                $world->setText('sign_ganon', $ganon_require);
+                $world->setText('ganon_fall_in_alt', "You think you\nare ready to\nface me?\n\nI will not die\n\nunless you\ncomplete your\ngoals. Dingus!");
+
+                break;
             case 'pedestal':
                 $world->setText('ganon_fall_in_alt', "You cannot\nkill me. You\nshould go for\nyour real goal\nIt's on the\npedestal.\n\nYou dingus!\n");
                 $world->setText('sign_ganon', "You need to get to the pedestal... Dingus!");
@@ -998,7 +1032,7 @@ class Randomizer implements RandomizerContract
                 $world->setText('ganon_fall_in_alt', "You think you\nare ready to\nface me?\n\nI will not die\n\nunless you\ncomplete your\ngoals. Dingus!");
         }
 
-        $world->setText('end_triforce', "{NOBORDER}\n" . array_first(fy_shuffle($strings['triforce'])));
+        $world->setText('end_triforce', "{NOBORDER}\n" . Arr::first(fy_shuffle($strings['triforce'])));
 
         return $this;
     }
@@ -1029,7 +1063,11 @@ class Randomizer implements RandomizerContract
                 }
 
                 for ($i = 0; $i < 8; $i++) {
-                    $world->setDrop($key, $i, Sprite::get($random_vanilla_packs[$key][$i]));
+                    $drop = Sprite::get($random_vanilla_packs[$key][$i]);
+
+                    if ($drop instanceof \ALttP\Sprite\Droppable) {
+                        $world->setDrop($key, $i, $drop);
+                    }
                 }
             }
         }

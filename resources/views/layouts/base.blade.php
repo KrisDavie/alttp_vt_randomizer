@@ -10,8 +10,10 @@
     <script src="{{ mix('js/app.js') }}"></script>
 </head>
 <body>
-    @yield('window')
-
+    <div id="page" :class="$store.state.theme">
+        @yield('window')
+    </div>
+    @include('cookie-consent::index')
     <script>
     @if (App::environment() == 'production')
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -20,6 +22,7 @@
         })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
         ga('create', '{{ env('GA_CODE') }}', 'auto');
+        ga('set', 'anonymizeIp', true);
         ga('send', 'pageview');
     @else
         ga = function() {
@@ -29,20 +32,10 @@
     var s3_prefix = "{{ env('AWS_URL') }}";
 
     new Vue({
-        el: '#navbar',
+        el: '#page',
         i18n: i18n,
         store: cStore,
     });
     </script>
-    @if (App::environment() == 'production' || env('AD_TEST'))
-    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            document.querySelectorAll('ins.adsbygoogle').forEach(function() {
-                (adsbygoogle = window.adsbygoogle || []).push({});
-            });
-        });
-    </script>
-    @endif
 </body>
 </html>

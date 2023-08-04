@@ -32,7 +32,7 @@ class Enemizer
      * Create a new Enemizer
      *
      * @param \ALttP\World  $world  world to enemize
-     * @param array  $rom_patch  the current rom patch
+     * @param array  $rom_patch  the current ROM patch
      *
      * @return void
      */
@@ -67,20 +67,20 @@ class Enemizer
         $system = php_uname('s') == 'Darwin' ? 'osx' : 'linux';
 
         $proc = new Process([
-            base_path("bin/enemizer/$system/EnemizerCLI.Core"),
+            base_path("vendor/z3/enemizer_$system/EnemizerCLI.Core"),
             '--rom',
             config('enemizer.base'),
             '--seed',
             $this->rng_seed,
             '--base',
-            public_path('js/base2current.json'),
+            Rom::getJsonPatchLocation(),
             '--randomizer',
             $this->randomizer_patch,
             '--enemizer',
             $this->options_file,
             '--output',
             $this->patch_file,
-        ], base_path("bin/enemizer/$system"));
+        ], base_path("vendor/z3/enemizer_$system"));
 
         Log::debug($proc->getCommandLine());
 
@@ -94,7 +94,7 @@ class Enemizer
             throw new \Exception("Unable to generate");
         }
 
-        $file_contents = file_get_contents(base_path("bin/enemizer/$system/enemizerBasePatch.json"));
+        $file_contents = file_get_contents(base_path("vendor/z3/enemizer_$system/enemizerBasePatch.json"));
 
         if ($file_contents === false) {
             Log::error('enemizer base not readable');
@@ -194,7 +194,7 @@ class Enemizer
             "GrayscaleMode" => false,
             "GenerateSpoilers" => false,
             "RandomizeLinkSpritePalette" => false,
-            "RandomizePots" => false,
+            "RandomizePots" => $this->world->config('enemizer.potShuffle') === 'on',
             "ShuffleMusic" => false,
             "BootlegMagic" => true,
             "CustomBosses" => false,
@@ -251,9 +251,9 @@ class Enemizer
     }
 
     /**
-     * write the current generated data to the Rom
+     * write the current generated data to the ROM
      *
-     * @param Rom $rom Rom to write data to
+     * @param Rom $rom ROM to write data to
      *
      * @return Rom
      */

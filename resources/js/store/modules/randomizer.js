@@ -1,5 +1,6 @@
 import localforage from "localforage";
 import axios from "axios";
+import Defaults from "./defaults";
 
 function hasValue(value, array) {
   return (
@@ -21,82 +22,7 @@ function asMulti(object, mKey) {
 export default {
   namespaced: true,
   state: {
-    preset: {
-      value: "default",
-      name: "randomizer.preset.options.default"
-    },
-    glitches_required: {
-      value: "none",
-      name: "randomizer.glitches_required.options.none"
-    },
-    item_placement: {
-      value: "advanced",
-      name: "randomizer.item_placement.options.advanced"
-    },
-    dungeon_items: {
-      value: "standard",
-      name: "randomizer.dungeon_items.options.standard"
-    },
-    accessibility: {
-      value: "items",
-      name: "randomizer.accessibility.options.items"
-    },
-    goal: {
-      value: "ganon",
-      name: "randomizer.goal.options.ganon"
-    },
-    tower_open: {
-      value: "7",
-      name: "randomizer.tower_open.options.7"
-    },
-    ganon_open: {
-      value: "7",
-      name: "randomizer.ganon_open.options.7"
-    },
-    world_state: {
-      value: "open",
-      name: "randomizer.world_state.options.open"
-    },
-    entrance_shuffle: {
-      value: "none",
-      name: "randomizer.entrance_shuffle.options.none"
-    },
-    boss_shuffle: {
-      value: "none",
-      name: "randomizer.boss_shuffle.options.none"
-    },
-    enemy_shuffle: {
-      value: "none",
-      name: "randomizer.enemy_shuffle.options.none"
-    },
-    hints: {
-      value: "on",
-      name: "randomizer.hints.options.on"
-    },
-    weapons: {
-      value: "randomized",
-      name: "randomizer.weapons.options.randomized"
-    },
-    item_pool: {
-      value: "normal",
-      name: "randomizer.item_pool.options.normal"
-    },
-    item_functionality: {
-      value: "normal",
-      name: "randomizer.item_functionality.options.normal"
-    },
-    enemy_damage: {
-      value: "default",
-      name: "randomizer.enemy_damage.options.default"
-    },
-    enemy_health: {
-      value: "default",
-      name: "randomizer.enemy_health.options.default"
-    },
-    spoiler: {
-      value: "on",
-      name: "randomizer.spoiler.options.on"
-    },
+    ...Defaults,
     options: {
       preset: [],
       glitches_required: [],
@@ -116,20 +42,7 @@ export default {
       item_functionality: [],
       enemy_damage: [],
       enemy_health: [],
-      spoiler: [
-        {
-          value: "off",
-          name: "randomizer.spoiler.options.off"
-        },
-        {
-          value: "on",
-          name: "randomizer.spoiler.options.on"
-        },
-        {
-          value: "generate",
-          name: "randomizer.spoiler.options.generate"
-        }
-      ]
+      spoiler: []
     },
     preset_map: {},
     initializing: true
@@ -162,7 +75,7 @@ export default {
             dispatch("load", ["item_functionality", "setItemFunctionality"]),
             dispatch("load", ["enemy_damage", "setEnemyDamage"]),
             dispatch("load", ["enemy_health", "setEnemyHealth"]),
-            dispatch("load", ["spoiler", "setSpoiler"])
+            dispatch("load", ["spoilers", "setSpoiler"])
           ])
         )
         .then(() => {
@@ -273,6 +186,9 @@ export default {
       if (state.goal.value === "dungeons") {
         commit("setGanonOpen", "7");
       }
+      if (state.goal.value === "ganonhunt") {
+        commit("setEntranceShuffle", "none");
+      }
     },
     setGanonOpen({ commit, state }, value) {
       commit("setGanonOpen", value);
@@ -303,6 +219,15 @@ export default {
         if (["full", "standard"].indexOf(state.dungeon_items.value) === -1) {
           commit("setDungeonItems", "standard");
         }
+
+        // ER doesn't currently support Ganonhunt
+        if (state.goal.value === "ganonhunt") {
+          commit("setGoal", "fast_ganon");
+        }
+
+        if (state.item_pool.value === "crowd_control") {
+          commit("setItemPool", "expert");
+        }
       }
     },
     setItemPool({ commit, state }, value) {
@@ -313,6 +238,12 @@ export default {
         state.item_placement.value !== "advanced"
       ) {
         commit("setItemPlacement", "advanced");
+      }
+      if (
+        state.item_pool.value === "crowd_control" &&
+        state.entrance_shuffle.value !== "none"
+      ) {
+        commit("setEntranceShuffle", "none");
       }
     }
   },
@@ -337,7 +268,8 @@ export default {
         item_pool,
         item_functionality,
         enemy_damage,
-        enemy_health
+        enemy_health,
+        spoilers
       }
     ) {
       state.options.preset = asMulti(presets, "preset");
@@ -367,6 +299,7 @@ export default {
       );
       state.options.enemy_damage = asMulti(enemy_damage, "enemy_damage");
       state.options.enemy_health = asMulti(enemy_health, "enemy_health");
+      state.options.spoiler = asMulti(spoilers, "spoiler");
       state.preset_map = presets;
     },
     setPreset(state, value) {

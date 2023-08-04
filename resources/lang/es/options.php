@@ -27,6 +27,21 @@ return [
                     ],
                 ],
                 [
+                    'header' => __('randomizer.glitches_required.options.hybrid_major_glitches'),
+                    'content' => [
+                        'Esta configuración requiere el conocimiento de todos los glitches en la superficie junto las formas de atravesar diagonales o clips en mazmorras/cuevas. En particular :',
+                        '<ul>'
+                            . '<li> Clips en Mazmorras o Cuevas sin botas (incluyendo clips de 1 frame  que requieren buffering)</li>'
+                            . '</ul>',
+                        'Además se tienen los siguientes cambios técnicos:',
+                        '<ul>'
+                            . '<li>La mecánica de Mundo Falso existe como en el juego original (esto es que si mueres dentro de una mazmorra del mundo oscuro sin matar a Agahnim, una transición en la superficie te devuelve al mundo de la Luz)</li>'
+                            . '<li>Aunque esté presente el Mundo Falso, los cristales siempre aparecen al derrotar al jefe de la mazmorra (evitando tener que volver a cambiar el mundo como en el juego original)</li>'
+                            . '<li>En el palacio del pantano, el agua de las habitaciones no se restaura menos en la primera habitación</li>'
+                            . '</ul>',
+                    ],
+                ],
+                [
                     'header' => __('randomizer.glitches_required.options.major_glitches'),
                     'content' => [
                         'Necesitas conocimiento de glitches mayores más avanzados. Específicamente:',
@@ -158,6 +173,12 @@ return [
                     'header' => __('randomizer.goal.options.triforce-hunt'),
                     'content' => [
                         '¡La Trifuerza se ha roto en 30 fragmentos esparcidos por todo Hyrule! Tienes que encontrar 20 de las 30 piezas y llevárselas a Murahdahla para recibir la Trifuerza. ¿Que preguntas quién es Murahdahala? ¡Pues obviamente es el hermano menor de Sahasrahla y Aginah! Ha vuelto de sus vacaciones en Lorule y puedes encontrarle pasando el rato en el patio del Castillo de Hyrule.',
+                    ],
+                ],
+                [
+                    'header' => __('randomizer.goal.options.ganonhunt'),
+                    'content' => [
+                        'La Trifuerza ha sido separada en 50 trozos y ¡se han perdido por todo Hyrule! Debes reunir 40 de las 50 piezas, y solo entonces Ganon  será vulnerable a tus ataques. Como en ganon rápido, el agujero que lleva a Ganon será accesible permanentemente. Esta meta no esta disponible con entradas randomizadas.',
                     ],
                 ],
             ],
@@ -602,19 +623,37 @@ return [
                 'music' => [
                     'header' => __('rom.settings.music'),
                     'content' => [
-                        'Activa o desactiva la música de fondo original. No tienes que desactivar esto si deseas usar paquetes MSU-1. Si se deja activado y se está usando un paquete MSU-1, entonces la música originals se usará como una reserva y solo sonará si hay un error de carga del MSU-1 (en lugar de silencio).',
+                        'Activa o desactiva la música de fondo original.',
+                    ],
+                ],
+                'msu1resume' => [
+                    'header' => __('rom.settings.msu1resume'),
+                    'content' => [
+                        'Activa la función continuar música MSU-1. Esta función permite que cada pista de música continúe por donde estaba al volver a entrar al Mundo Abierto.',
+                    ],
+                ],
+                'shuffle_sfx' => [
+                    'header' => __('rom.settings.shuffle_sfx'),
+                    'content' => [
+                        'Mezcla todos los efectos de sonido en el juego. Esto quiere decir que cualquier cosa puede sonar como cualquier otra. ¡Activar con precaución!',
                     ],
                 ],
                 'quickswap' => [
                     'header' => __('rom.settings.quickswap'),
                     'content' => [
-                        'Permite que el objeto equipado se cambie usando los botones L y R sin abrir el menú. No está disponible para ROMs de carreras (excepto cuando las entradas estén randomizadas).',
+                        'Permite que el objeto equipado se cambie usando los botones L y R sin abrir el menú.',
                     ],
                 ],
                 'palette_shuffle' => [
                     'header' => __('rom.settings.palette_shuffle'),
                     'content' => [
                         'Randomiza las paletas de color del juego. Esto significa que todo podria verse muy extraño. ¡Actívalo con cuidado!',
+                    ],
+                ],
+                'reduce_flashing' => [
+                    'header' => __('rom.settings.reduce_flashing'),
+                    'content' => [
+                        'Reduce severamente la intensidad de efectos del juego que parpadeen, o directamente los desactiva. Tener cuidado, tu sensibilidad a los efectos aun puede variar.',
                     ],
                 ],
             ],

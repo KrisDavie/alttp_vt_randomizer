@@ -98,7 +98,7 @@ class NorthWest extends Region
                     || ($this->world->config('canSuperSpeed', false) && $items->canSpinSpeed())
                     || ($items->has('MagicMirror') && $this->world->getRegion('North West Dark World')->canEnter($locations, $items)
                         && ($items->has('MoonPearl') || ($items->hasABottle() && $this->world->config('canOWYBA', false))
-                            || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive()))));
+                            || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world)))));
         });
 
         $this->locations["Pegasus Rocks"]->setRequirements(function ($locations, $items) {
@@ -109,12 +109,12 @@ class NorthWest extends Region
             return $items->has('Powder')
                 && ($items->has('Hammer')
                     || ((($this->world->config('canBootsClip', false) && $items->has('PegasusBoots'))
-                        || $this->world->config('canOneFrameClipOW', false))
+                        || $this->world->config('canOneFrameClipOW', false)) && $this->world->config('canTransitionWrapped', false)
                         && ($items->has('Flippers') || $this->world->config('canFakeFlipper', false)))
                     || ($items->has('MagicMirror')
                         && (($this->world->config('canMirrorWrap', false) && $this->world->getRegion('North West Dark World')->canEnter($locations, $items))
                             || (($items->has('MoonPearl') || ($items->hasABottle() && $this->world->config('canOWYBA', false))
-                                || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive()))
+                                || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world)))
                                 && (($items->canLiftDarkRocks() && $this->world->getRegion('North West Dark World')->canEnter($locations, $items))
                                     || ($this->world->config('canSuperSpeed', false) && $items->canSpinSpeed()
                                         && ($items->has('Flippers') || $this->world->config('canFakeFlipper', false))
@@ -135,7 +135,7 @@ class NorthWest extends Region
                 || $this->world->config('canOneFrameClipOW', false)
                 || ($items->has('MagicMirror') && $this->world->getRegion('North West Dark World')->canEnter($locations, $items)
                     && ($items->has('MoonPearl') || ($items->hasABottle() && $this->world->config('canOWYBA', false))
-                        || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive())));
+                        || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world))));
         });
 
         $this->can_enter = function ($locations, $items) {

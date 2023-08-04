@@ -1,5 +1,5 @@
 /node_modules
-/bin
+/bin/enemizer
 /public/hot
 /public/fonts/vendor
 /public/mix-*.json
@@ -9,6 +9,7 @@
 /public/images/vendor
 /storage/*.key
 /resources/assets/js/*.generated.js
+/resources/js/*.generated.js
 /vendor
 /coverage
 /docs
@@ -20,3 +21,5 @@
 .php_cs.cache
 /.vscode
 /.vs
+*.sfc
+*.smc

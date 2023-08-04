@@ -4,6 +4,7 @@ namespace ALttP;
 
 use ALttP\Support\Credits;
 use ALttP\Support\ItemCollection;
+use ALttP\Support\InitialSram;
 use ALttP\Text;
 use Log;
 
@@ -12,8 +13,8 @@ use Log;
  */
 class Rom
 {
-    const BUILD = '2019-11-15';
-    const HASH = 'ac23ab12e7c442515d51370642772c3b';
+    const BUILD = '2023-03-15';
+    const HASH = '29b5b39ee65ddfa94638ba2e020a66cd';
     const SIZE = 2097152;
 
     private $tmp_file;
@@ -21,6 +22,7 @@ class Rom
     private $text;
     protected $rom;
     protected $write_log = [];
+    public $initial_sram;
 
     /**
      * Save a ROM build the DB for later retervial if someone is patching for an old seed.
@@ -39,6 +41,16 @@ class Rom
         $build->save();
 
         return $build;
+    }
+
+    /**
+     * Get the location of the current json patch.
+     *
+     * @return string
+     */
+    public static function getJsonPatchLocation(): string
+    {
+        return storage_path(sprintf('patches/%s.json', self::HASH));
     }
 
     /**
@@ -69,6 +81,7 @@ class Rom
         $this->credits = new Credits;
         $this->text = new Text;
         $this->text->removeUnwanted();
+        $this->initial_sram = new InitialSram;
     }
 
     /**
@@ -155,533 +168,6 @@ class Rom
     }
 
     /**
-     * set the items passed in as Link's starting equipment
-     *
-     * @param ItemCollection $items items to equip Link with
-     *
-     * @return $this
-     */
-    public function setStartingEquipment(ItemCollection $items)
-    {
-        $equipment = array_fill(0x340, 0x4F, 0);
-        $starting_rupees = 0;
-        $starting_arrow_capacity = 0;
-        $starting_bomb_capacity = 0;
-        // starting heart containers
-        if ($items->heartCount(0) < 1) {
-            $equipment[0x36C] = 0x18;
-            $equipment[0x36D] = 0x18;
-        }
-        // default abilities
-        $equipment[0x379] |= 0b01101000;
-
-        foreach ($items as $item) {
-            switch ($item->getTarget()->getRawName()) {
-                case 'L1Sword':
-                    $equipment[0x359] = 0x01;
-                    break;
-                case 'L1SwordAndShield':
-                    $equipment[0x359] = 0x01;
-                    $equipment[0x35A] = 0x01;
-                    break;
-                case 'L2Sword':
-                case 'MasterSword':
-                    $equipment[0x359] = 0x02;
-                    break;
-                case 'L3Sword':
-                    $equipment[0x359] = 0x03;
-                    break;
-                case 'L4Sword':
-                    $equipment[0x359] = 0x04;
-                    break;
-                case 'BlueShield':
-                    $equipment[0x35A] = 0x01;
-                    break;
-                case 'RedShield':
-                    $equipment[0x35A] = 0x02;
-                    break;
-                case 'MirrorShield':
-                    $equipment[0x35A] = 0x03;
-                    break;
-                case 'FireRod':
-                    $equipment[0x345] = 0x01;
-                    break;
-                case 'IceRod':
-                    $equipment[0x346] = 0x01;
-                    break;
-                case 'Hammer':
-                    $equipment[0x34B] = 0x01;
-                    break;
-                case 'Hookshot':
-                    $equipment[0x342] = 0x01;
-                    break;
-                case 'Bow':
-                    $equipment[0x340] = 0x01;
-                    if ($this->readByte(0x180175) !== 0x01) {
-                        $equipment[0x38E] |= 0b10000000;
-                    }
-                    break;
-                case 'BowAndArrows':
-                    $equipment[0x340] = 0x02;
-                    $equipment[0x38E] |= 0b10000000;
-                    if ($this->readByte(0x180175) === 0x01) {
-                        $equipment[0x377] = 0x01;
-                    }
-                    break;
-                case 'SilverArrowUpgrade':
-                    $equipment[0x38E] |= 0b01000000;
-                    if ($this->readByte(0x180175) === 0x01) {
-                        $equipment[0x377] = 0x01;
-                    }
-                    break;
-                case 'BowAndSilverArrows':
-                    $equipment[0x340] = 0x04;
-                    $equipment[0x38E] |= 0b01000000;
-                    if ($this->readByte(0x180175) === 0x01) {
-                        $equipment[0x377] = 0x01;
-                    } else {
-                        $equipment[0x38E] |= 0b10000000;
-                    }
-                    break;
-                case 'Progressivebow':
-                    min($equipment[0x340] + 2, 4);
-                    if ($this->readByte(0x180175) === 0x01) {
-                        $equipment[0x377] = 0x01;
-                    }
-                    // @todo figure out 0x38E
-                    break;
-                case 'Boomerang':
-                    $equipment[0x341] = 0x01;
-                    $equipment[0x38C] |= 0b10000000;
-                    break;
-                case 'RedBoomerang':
-                    $equipment[0x341] = 0x02;
-                    $equipment[0x38C] |= 0b01000000;
-                    break;
-                case 'Mushroom':
-                    $equipment[0x344] = 0x01;
-                    $equipment[0x38C] |= 0b00101000;
-                    break;
-                case 'Powder':
-                    $equipment[0x344] = 0x02;
-                    $equipment[0x38C] |= 0b00010000;
-                    break;
-                case 'Bombos':
-                    $equipment[0x347] = 0x01;
-                    break;
-                case 'Ether':
-                    $equipment[0x348] = 0x01;
-                    break;
-                case 'Quake':
-                    $equipment[0x349] = 0x01;
-                    break;
-                case 'Lamp':
-                    $equipment[0x34A] = 0x01;
-                    break;
-                case 'Shovel':
-                    $equipment[0x34C] = 0x01;
-                    $equipment[0x38C] |= 0b00000100;
-                    break;
-                case 'OcarinaInactive':
-                    $equipment[0x34C] = 0x02;
-                    $equipment[0x38C] |= 0b00000010;
-                    break;
-                case 'OcarinaActive':
-                    $equipment[0x34C] = 0x03;
-                    $equipment[0x38C] |= 0b00000001;
-                    break;
-                case 'CaneOfSomaria':
-                    $equipment[0x350] = 0x01;
-                    break;
-                case 'Bottle':
-                    if ($equipment[0x34F] < 4) {
-                        $equipment[0x35C + $equipment[0x34F]] = 0x02;
-                        $equipment[0x34F] += 1;
-                    }
-                    break;
-                case 'BottleWithRedPotion':
-                    if ($equipment[0x34F] < 4) {
-                        $equipment[0x35C + $equipment[0x34F]] = 0x03;
-                        $equipment[0x34F] += 1;
-                    }
-                    break;
-                case 'BottleWithGreenPotion':
-                    if ($equipment[0x34F] < 4) {
-                        $equipment[0x35C + $equipment[0x34F]] = 0x04;
-                        $equipment[0x34F] += 1;
-                    }
-                    break;
-                case 'BottleWithBluePotion':
-                    if ($equipment[0x34F] < 4) {
-                        $equipment[0x35C + $equipment[0x34F]] = 0x05;
-                        $equipment[0x34F] += 1;
-                    }
-                    break;
-                case 'BottleWithBee':
-                    if ($equipment[0x34F] < 4) {
-                        $equipment[0x35C + $equipment[0x34F]] = 0x07;
-                        $equipment[0x34F] += 1;
-                    }
-                    break;
-                case 'BottleWithFairy':
-                    if ($equipment[0x34F] < 4) {
-                        $equipment[0x35C + $equipment[0x34F]] = 0x06;
-                        $equipment[0x34F] += 1;
-                    }
-                    break;
-                case 'BottleWithGoldBee':
-                    if ($equipment[0x34F] < 4) {
-                        $equipment[0x35C + $equipment[0x34F]] = 0x08;
-                        $equipment[0x34F] += 1;
-                    }
-                    break;
-                case 'CaneOfByrna':
-                    $equipment[0x351] = 0x01;
-                    break;
-                case 'Cape':
-                    $equipment[0x352] = 0x01;
-                    break;
-                case 'MagicMirror':
-                    $equipment[0x353] = 0x02;
-                    break;
-                case 'PowerGlove':
-                    $equipment[0x354] = 0x01;
-                    break;
-                case 'TitansMitt':
-                    $equipment[0x354] = 0x02;
-                    break;
-                case 'BookOfMudora':
-                    $equipment[0x34E] = 0x01;
-                    break;
-                case 'Flippers':
-                    $equipment[0x356] = 0x01;
-                    $equipment[0x379] |= 0b00000010;
-                    break;
-                case 'MoonPearl':
-                    $equipment[0x357] = 0x01;
-                    break;
-                case 'BugCatchingNet':
-                    $equipment[0x34D] = 0x01;
-                    break;
-                case 'BlueMail':
-                    $equipment[0x35B] = 0x01;
-                    break;
-                case 'RedMail':
-                    $equipment[0x35B] = 0x02;
-                    break;
-                case 'Bomb':
-                    $equipment[0x343] = min($equipment[0x343] + 1, 99);
-                    break;
-                case 'ThreeBombs':
-                    $equipment[0x343] = min($equipment[0x343] + 3, 99);
-                    break;
-                case 'TenBombs':
-                    $equipment[0x343] = min($equipment[0x343] + 10, 99);
-                    break;
-                case 'OneRupee':
-                    $starting_rupees += 1;
-                    break;
-                case 'FiveRupees':
-                    $starting_rupees += 5;
-                    break;
-                case 'TwentyRupees':
-                case 'TwentyRupees2':
-                    $starting_rupees += 20;
-                    break;
-                case 'FiftyRupees':
-                    $starting_rupees += 50;
-                    break;
-                case 'OneHundredRupees':
-                    $starting_rupees += 100;
-                    break;
-                case 'PendantOfCourage':
-                    $equipment[0x374] |= 0b00000100;
-                    break;
-                case 'PendantOfWisdom':
-                    $equipment[0x374] |= 0b00000001;
-                    break;
-                case 'PendantOfPower':
-                    $equipment[0x374] |= 0b00000010;
-                    break;
-                case 'HeartContainerNoAnimation':
-                case 'BossHeartContainer':
-                case 'HeartContainer':
-                    $equipment[0x36C] = min($equipment[0x36C] + 0x08, 0xA0);
-                    $equipment[0x36D] = min($equipment[0x36D] + 0x08, 0xA0);
-                    break;
-                case 'PieceOfHeart':
-                    $equipment[0x36B] += 1;
-                    if ($equipment[0x36B] >= 4) {
-                        $equipment[0x36C] = min($equipment[0x36C] + (0x08 * floor($equipment[0x36B] / 4)), 0xA0);
-                        $equipment[0x36B] %= 4;
-                    }
-                    break;
-                case 'Heart':
-                    $equipment[0x36D] = min($equipment[0x36D] + 0x08, 0xA0);
-                    break;
-                case 'Arrow':
-                    $equipment[0x377] = min($equipment[0x377] + 1, 99);
-                    break;
-                case 'TenArrows':
-                    $equipment[0x377] = min($equipment[0x377] + 10, 99);
-                    break;
-                case 'SmallMagic':
-                    $equipment[0x36E] = min($equipment[0x36E] + 0x10, 0x80);
-                    break;
-                case 'ThreeHundredRupees':
-                    $starting_rupees += 300;
-                    break;
-                case 'PegasusBoots':
-                    $equipment[0x355] = 0x01;
-                    $equipment[0x379] |= 0b00000100;
-                    break;
-                case 'BombUpgrade5':
-                    $starting_bomb_capacity += 5;
-                    break;
-                case 'BombUpgrade10':
-                    $starting_bomb_capacity += 10;
-                    break;
-                case 'ArrowUpgrade5':
-                    $starting_arrow_capacity += 5;
-                    break;
-                case 'ArrowUpgrade10':
-                    $starting_arrow_capacity += 10;
-                    break;
-                case 'HalfMagic':
-                    $equipment[0x37B] = 0x01;
-                    break;
-                case 'QuarterMagic':
-                    $equipment[0x37B] = 0x02;
-                    break;
-                case 'ProgressiveSword':
-                    $equipment[0x359] = min($equipment[0x359] + 1, 4);
-                    break;
-                case 'ProgressiveShield':
-                    $equipment[0x35A] = min($equipment[0x35A] + 1, 3);
-                    break;
-                case 'ProgressiveArmor':
-                    $equipment[0x35B] = min($equipment[0x35B] + 1, 2);
-                    break;
-                case 'ProgressiveGlove':
-                    $equipment[0x354] = min($equipment[0x354] + 1, 2);
-                    break;
-                case 'MapLW':
-                    $equipment[0x368] |= 0b00000001;
-                    break;
-                case 'MapDW':
-                    $equipment[0x368] |= 0b00000010;
-                    break;
-                case 'MapA2':
-                    $equipment[0x368] |= 0b00000100;
-                    break;
-                case 'MapD7':
-                    $equipment[0x368] |= 0b00001000;
-                    break;
-                case 'MapD4':
-                    $equipment[0x368] |= 0b00010000;
-                    break;
-                case 'MapP3':
-                    $equipment[0x368] |= 0b00100000;
-                    break;
-                case 'MapD5':
-                    $equipment[0x368] |= 0b01000000;
-                    break;
-                case 'MapD3':
-                    $equipment[0x368] |= 0b10000000;
-                    break;
-                case 'MapD6':
-                    $equipment[0x369] |= 0b00000001;
-                    break;
-                case 'MapD1':
-                    $equipment[0x369] |= 0b00000010;
-                    break;
-                case 'MapD2':
-                    $equipment[0x369] |= 0b00000100;
-                    break;
-                case 'MapA1':
-                    $equipment[0x369] |= 0b00001000;
-                    break;
-                case 'MapP2':
-                    $equipment[0x369] |= 0b00010000;
-                    break;
-                case 'MapP1':
-                    $equipment[0x369] |= 0b00100000;
-                    break;
-                case 'MapH1':
-                    $equipment[0x369] |= 0b01000000;
-                    break;
-                case 'MapH2':
-                    $equipment[0x369] |= 0b10000000;
-                    break;
-                case 'CompassA2':
-                    $equipment[0x364] |= 0b00000100;
-                    break;
-                case 'CompassD7':
-                    $equipment[0x364] |= 0b00001000;
-                    break;
-                case 'CompassD4':
-                    $equipment[0x364] |= 0b00010000;
-                    break;
-                case 'CompassP3':
-                    $equipment[0x364] |= 0b00100000;
-                    break;
-                case 'CompassD5':
-                    $equipment[0x364] |= 0b01000000;
-                    break;
-                case 'CompassD3':
-                    $equipment[0x364] |= 0b10000000;
-                    break;
-                case 'CompassD6':
-                    $equipment[0x365] |= 0b00000001;
-                    break;
-                case 'CompassD1':
-                    $equipment[0x365] |= 0b00000010;
-                    break;
-                case 'CompassD2':
-                    $equipment[0x365] |= 0b00000100;
-                    break;
-                case 'CompassA1':
-                    $equipment[0x365] |= 0b00001000;
-                    break;
-                case 'CompassP2':
-                    $equipment[0x365] |= 0b00010000;
-                    break;
-                case 'CompassP1':
-                    $equipment[0x365] |= 0b00100000;
-                    break;
-                case 'CompassH1':
-                    $equipment[0x365] |= 0b01000000;
-                    break;
-                case 'CompassH2':
-                    $equipment[0x365] |= 0b10000000;
-                    break;
-                case 'BigKeyA2':
-                    $equipment[0x366] |= 0b00000100;
-                    break;
-                case 'BigKeyD7':
-                    $equipment[0x366] |= 0b00001000;
-                    break;
-                case 'BigKeyD4':
-                    $equipment[0x366] |= 0b00010000;
-                    break;
-                case 'BigKeyP3':
-                    $equipment[0x366] |= 0b00100000;
-                    break;
-                case 'BigKeyD5':
-                    $equipment[0x366] |= 0b01000000;
-                    break;
-                case 'BigKeyD3':
-                    $equipment[0x366] |= 0b10000000;
-                    break;
-                case 'BigKeyD6':
-                    $equipment[0x367] |= 0b00000001;
-                    break;
-                case 'BigKeyD1':
-                    $equipment[0x367] |= 0b00000010;
-                    break;
-                case 'BigKeyD2':
-                    $equipment[0x367] |= 0b00000100;
-                    break;
-                case 'BigKeyA1':
-                    $equipment[0x367] |= 0b00001000;
-                    break;
-                case 'BigKeyP2':
-                    $equipment[0x367] |= 0b00010000;
-                    break;
-                case 'BigKeyP1':
-                    $equipment[0x367] |= 0b00100000;
-                    break;
-                case 'BigKeyH1':
-                    $equipment[0x367] |= 0b01000000;
-                    break;
-                case 'BigKeyH2':
-                    $equipment[0x367] |= 0b10000000;
-                    break;
-                case 'KeyH2':
-                    $equipment[0x37C] += 1;
-                    break;
-                case 'KeyH1':
-                    $equipment[0x37D] += 1;
-                    break;
-                case 'KeyP1':
-                    $equipment[0x37E] += 1;
-                    break;
-                case 'KeyP2':
-                    $equipment[0x37F] += 1;
-                    break;
-                case 'KeyA1':
-                    $equipment[0x380] += 1;
-                    break;
-                case 'KeyD2':
-                    $equipment[0x381] += 1;
-                    break;
-                case 'KeyD1':
-                    $equipment[0x382] += 1;
-                    break;
-                case 'KeyD6':
-                    $equipment[0x383] += 1;
-                    break;
-                case 'KeyD3':
-                    $equipment[0x384] += 1;
-                    break;
-                case 'KeyD5':
-                    $equipment[0x385] += 1;
-                    break;
-                case 'KeyP3':
-                    $equipment[0x386] += 1;
-                    break;
-                case 'KeyD4':
-                    $equipment[0x387] += 1;
-                    break;
-                case 'KeyD7':
-                    $equipment[0x388] += 1;
-                    break;
-                case 'KeyA2':
-                    $equipment[0x389] += 1;
-                    break;
-                case 'Crystal1':
-                    $equipment[0x37A] |= 0b00000010;
-                    break;
-                case 'Crystal2':
-                    $equipment[0x37A] |= 0b00010000;
-                    break;
-                case 'Crystal3':
-                    $equipment[0x37A] |= 0b01000000;
-                    break;
-                case 'Crystal4':
-                    $equipment[0x37A] |= 0b00100000;
-                    break;
-                case 'Crystal5':
-                    $equipment[0x37A] |= 0b00000100;
-                    break;
-                case 'Crystal6':
-                    $equipment[0x37A] |= 0b00000001;
-                    break;
-                case 'Crystal7':
-                    $equipment[0x37A] |= 0b00001000;
-                    break;
-            }
-        }
-
-        $equipment[0x362] = $equipment[0x360] = $starting_rupees & 0xFF;
-        $equipment[0x363] = $equipment[0x361] = $starting_rupees >> 8;
-
-        $this->write(0x183000, pack('C*', ...$equipment));
-        // For file select screen
-        $this->write(0x271A6, pack('C*', ...array_slice($equipment, 0, 60)));
-        $this->setMaxArrows($starting_arrow_capacity);
-        $this->setMaxBombs($starting_bomb_capacity);
-
-        // not swordless mode and setting a sword
-        if ($this->readByte(0x180043) !== 0xFF && $equipment[0x359]) {
-            // write starting sword
-            $this->write(0x180043, pack('C*', $equipment[0x359]));
-        }
-
-        return $this;
-    }
-
-    /**
      * Set the Low Health Beep Speed
      *
      * @param string $setting name (0x00: off, 0x20: normal, 0x40: half, 0x80: quarter)
@@ -736,7 +222,7 @@ class Rom
      */
     public function setByrnaCaveSpikeDamage(int $dmg_value = 0x08): self
     {
-        $this->write(0x180168, pack('C*', $dmg_value));
+        $this->write(0x180195, pack('C*', $dmg_value));
 
         return $this;
     }
@@ -783,6 +269,22 @@ class Rom
     public function setCapeSpikeCaveUsage(int $normal = 0x04, int $half = 0x08, int $quarter = 0x10): self
     {
         $this->write(0x18016E, pack('C*', $normal, $half, $quarter));
+
+        return $this;
+    }
+
+    /**
+     * Set regular Cape Magic Usage
+     *
+     * @param int $normal normal magic usage
+     * @param int $half half magic usage
+     * @param int $quarter quarter magic usage
+     *
+     * @return $this
+     */
+    public function setCapeRegularMagicUsage(int $normal = 0x04, int $half = 0x08, int $quarter = 0x10): self
+    {
+        $this->write(0x3ADA7, pack('C*', $normal, $half, $quarter));
 
         return $this;
     }
@@ -904,20 +406,6 @@ class Rom
     }
 
     /**
-     * Set the starting Max Arrows
-     *
-     * @param int $max
-     *
-     * @return $this
-     */
-    public function setMaxArrows(int $max = 30): self
-    {
-        $this->write(0x180035, pack('C', $max));
-
-        return $this;
-    }
-
-    /**
      * Set the Digging Game Rng
      *
      * @param int $digs
@@ -928,20 +416,6 @@ class Rom
     {
         $this->write(0x180020, pack('C', $digs));
         $this->write(0xEFD95, pack('C', $digs));
-
-        return $this;
-    }
-
-    /**
-     * Set the starting Max Bombs
-     *
-     * @param int $max
-     *
-     * @return $this
-     */
-    public function setMaxBombs(int $max = 10): self
-    {
-        $this->write(0x180034, pack('C', $max));
 
         return $this;
     }
@@ -985,7 +459,7 @@ class Rom
      */
     public function setGoalRequiredCount(int $goal = 0): self
     {
-        $this->write(0x180167, pack('C', $goal));
+        $this->write(0x180167, pack('v', $goal));
 
         return $this;
     }
@@ -1107,8 +581,25 @@ class Rom
             case 'yes':
                 $byte = pack('C*', 0x01);
                 break;
-            case 'custom':
+            case 'crystals_only':
                 $byte = pack('C', 0x04);
+                break;
+            case 'triforce_pieces':
+                $byte = pack('C', 0x05);
+                break;
+            case 'lightspeed':
+                // light world only, pull ped, kill aga 1
+                $byte = pack('C', 0x06);
+                break;
+            case 'crystals_bosses':
+                $byte = pack('C', 0x07);
+                break;
+            case 'bosses_only':
+                $byte = pack('C', 0x08);
+                break;
+            case 'dungeons_no_agahnim':
+                // all dungeons, aga 1 not required
+                $byte = pack('C', 0x09);
                 break;
             case 'no':
             default:
@@ -1179,7 +670,7 @@ class Rom
     }
 
     /**
-     * Commit the text table to rom
+     * Commit the text table to ROM
      *
      * @return $this
      */
@@ -1344,6 +835,7 @@ class Rom
                 $byte = 0x02;
                 break;
             case 'MajorGlitches':
+            case 'HybridMajorGlitches':
                 $byte = 0x01;
                 break;
             case 'off':
@@ -1602,80 +1094,9 @@ class Rom
     }
 
     /**
-     * Adjust some settings for hard mode
-     *
-     * @param int $level how hard to make it, higher should be harder
-     *
-     * @throws \Exception if an unknown hard mode is selected
-     *
-     * @return $this
-     */
-    public function setHardMode(int $level = 0): self
-    {
-        $this->setCaneOfByrnaSpikeCaveUsage();
-        $this->setCapeSpikeCaveUsage();
-        $this->setByrnaCaveSpikeDamage(0x08);
-        // Bryna magic amount used per "cycle"
-        $this->write(0x45C42, pack('C*', 0x04, 0x02, 0x01));
-
-        switch ($level) {
-            case -1:
-            case 0:
-                // Cape magic
-                $this->write(0x3ADA7, pack('C*', 0x04, 0x08, 0x10));
-                $this->setCaneOfByrnaInvulnerability(true);
-                $this->setPowderedSpriteFairyPrize(0xE3);
-                $this->setBottleFills([0xA0, 0x80]);
-                $this->setCatchableFairies(true);
-                $this->setCatchableBees(true);
-                $this->setStunItems(0x03);
-                $this->setSilversOnlyAtGanon(false);
-
-                break;
-            case 1:
-                $this->write(0x3ADA7, pack('C*', 0x02, 0x04, 0x08));
-                $this->setCaneOfByrnaInvulnerability(false);
-                $this->setPowderedSpriteFairyPrize(0xD8); // 1 heart
-                $this->setBottleFills([0x38, 0x40]); // 7 hearts, 1/2 magic refills
-                $this->setCatchableFairies(false);
-                $this->setCatchableBees(true);
-                $this->setStunItems(0x02);
-                $this->setSilversOnlyAtGanon(true);
-
-                break;
-            case 2:
-                $this->write(0x3ADA7, pack('C*', 0x02, 0x04, 0x08));
-                $this->setCaneOfByrnaInvulnerability(false);
-                $this->setPowderedSpriteFairyPrize(0xD8); // 1 heart
-                $this->setBottleFills([0x20, 0x20]); // 4 heart, 1/4 magic refills
-                $this->setCatchableFairies(false);
-                $this->setCatchableBees(true);
-                $this->setStunItems(0x00);
-                $this->setSilversOnlyAtGanon(true);
-
-                break;
-            case 3:
-                $this->write(0x3ADA7, pack('C*', 0x01, 0x02, 0x04));
-                $this->setCaneOfByrnaInvulnerability(false);
-                $this->setPowderedSpriteFairyPrize(0x79); // Bees
-                $this->setBottleFills([0x00, 0x00]); // 0 hearts, 0 magic refills
-                $this->setCatchableFairies(false);
-                $this->setCatchableBees(true);
-                $this->setStunItems(0x00);
-                $this->setSilversOnlyAtGanon(true);
-
-                break;
-            default:
-                throw new \Exception("Trying to set hard mode that doesn't exist");
-        }
-
-        return $this;
-    }
-
-    /**
      * Quick and dirty shop setting code.
      *
-     * @param \ALttP\Support\ShopCollection $shops shops to write to rom
+     * @param \ALttP\Support\ShopCollection $shops shops to write to ROM
      *
      * @return $this
      */
@@ -2108,7 +1529,6 @@ class Rom
 
     public function setGameState(string $state = null)
     {
-        $this->setOpenMode(false);
         $this->setFixFakeWorld(false);
         switch ($state) {
             case 'open':
@@ -2117,6 +1537,7 @@ class Rom
             case 'inverted':
                 return $this->setInvertedMode(true);
             case 'standard':
+                return $this->setStandardMode();
             default:
                 return $this;
         }
@@ -2131,10 +1552,26 @@ class Rom
      */
     public function setOpenMode(bool $enable = true): self
     {
-        $this->write(0x180032, pack('C*', $enable ? 0x01 : 0x00));
         $this->setSewersLampCone(!$enable);
-        $this->setLightWorldLampCone(false);
-        $this->setDarkWorldLampCone(false);
+        $this->initial_sram->preOpenCastleGate();
+        $this->initial_sram->setProgressIndicator(0x02);
+        $this->initial_sram->setProgressFlags(0x14);
+        $this->initial_sram->setStartingEntrance(0x01);
+
+        return $this;
+    }
+
+    /**
+     * Set Game in Standard Mode.
+     *
+     * @return $this
+     */
+    public function setStandardMode(): self
+    {
+        $this->setSewersLampCone(true);
+        $this->initial_sram->setProgressIndicator(0x00);
+        $this->initial_sram->setProgressFlags(0x00);
+        $this->initial_sram->setStartingEntrance(0x00);
 
         return $this;
     }
@@ -2166,6 +1603,14 @@ class Rom
         $this->write(snes_to_pc(0x07A96D), pack('C*', 0xD0)); // ; residual portal?
         $this->write(snes_to_pc(0x08D40C), pack('C*', 0xD0)); // ; morph poof
         $this->setFixFakeWorld($enable); // ; ER's Fix fake worlds fix. Currently needed for inverted
+
+        // remove diggable light world portals
+        $this->write(snes_to_pc(0x1BC428), pack('C*', 0x00));
+        $this->write(snes_to_pc(0x1BC43A), pack('C*', 0x00));
+        $this->write(snes_to_pc(0x1BC590), pack('C*', 0x00));
+        $this->write(snes_to_pc(0x1BC5A1), pack('C*', 0x00));
+        $this->write(snes_to_pc(0x1BC5B1), pack('C*', 0x00));
+        $this->write(snes_to_pc(0x1BC5C7), pack('C*', 0x00));
 
         $this->write(0x15B8C, pack('C', 0x6C)); // update link's house exit to be dark world (All the other exit table values can be reused)
         $this->write(0xDBB73 + 0x00, pack('C', 0x53)); // entering links house door leads to bomb shop
@@ -2489,8 +1934,8 @@ class Rom
         $this->text->setString('dark_sanctuary_yes', "{NOTEXT}", false);
         $this->text->setString('dark_sanctuary_no', "If you want that healing you're gonna need 20 rupees.");
 
-        $this->text->setString('menu_start_2', "{MENU}\n{SPEED0}\n≥@'s house\n Dark Chapel\n{CHOICE3}", false);
-        $this->text->setString('menu_start_3', "{MENU}\n{SPEED0}\n≥@'s house\n Dark Chapel\n Dark Mountain\n{CHOICE2}", false);
+        $this->text->setString('menu_start_2', "{MENU}\n{SPEED0}\n≥@'s House\n Dark Chapel\n{CHOICE3}", false);
+        $this->text->setString('menu_start_3', "{MENU}\n{SPEED0}\n≥@'s House\n Dark Chapel\n Dark Mountain\n{CHOICE2}", false);
 
         $this->text->setString('intro_main', "{INTRO}\n Episode  III\n{PAUSE3}\n A Link to\n   the Past\n"
             . "{PAUSE3}\nInverted\n  Randomizer\n{PAUSE3}\nAfter mostly disregarding what happened in the first two games,\n"
@@ -2544,6 +1989,36 @@ class Rom
     }
 
     /**
+     * Set Ball and Chain guard dungeon id
+     *
+     * @param int $dungeon_id
+     *
+     * @return $this
+     */
+    public function setBallNChainDungeon(int $dungeon_id): self
+    {
+        $this->write(0x186FFF, pack('C', $dungeon_id));
+
+        return $this;
+    }
+
+    /**
+     * Set totals for HUD compass counts.
+     *
+     * @param array $totals
+     *
+     * @return $this
+     */
+    public function setCompassCountTotals(array $totals = []): self
+    {
+        $default = [0x08, 0x08, 0x06, 0x06, 0x02, 0x0A, 0x0E, 0x08, 0x08, 0x08, 0x06, 0x08, 0x0C, 0x1B, 0x00, 0x00];
+        $compass_counts = empty($totals) ? $default : $totals;
+        $this->write(0x187000, pack('C*', ...$compass_counts));
+
+        return $this;
+    }
+
+    /**
      * Enable text box to show with free roaming items
      *
      * ---o bmcs
@@ -2588,12 +2063,12 @@ class Rom
     public function setSwordlessMode(bool $enable = false): self
     {
         $this->write(0x18003F, pack('C*', $enable ? 0x01 : 0x00)); // Hammer Ganon
-        $this->write(0x180040, pack('C*', $enable ? 0x01 : 0x00)); // Open Curtains
         $this->write(0x180041, pack('C*', $enable ? 0x01 : 0x00)); // Swordless Medallions
-        $this->write(0x180043, pack('C*', $enable ? 0xFF : 0x00)); // set Link's starting sword 0xFF is taken sword
-
         $this->setHammerTablet($enable);
         $this->setHammerBarrier(false);
+        if ($enable === true) {
+            $this->initial_sram->setSwordlessCurtains();
+        }
 
         return $this;
     }
@@ -2612,33 +2087,6 @@ class Rom
         return $this;
     }
 
-    /**
-     * Enable lampless light cone in Light World Dungeons
-     *
-     * @param bool $enable switch on or off
-     *
-     * @return $this
-     */
-    public function setLightWorldLampCone(bool $enable = true): self
-    {
-        $this->write(0x180039, pack('C*', $enable ? 0x01 : 0x00));
-
-        return $this;
-    }
-
-    /**
-     * Enable lampless light cone in Dark World Dungeons
-     *
-     * @param bool $enable switch on or off
-     *
-     * @return $this
-     */
-    public function setDarkWorldLampCone(bool $enable = true): self
-    {
-        $this->write(0x18003A, pack('C*', $enable ? 0x01 : 0x00));
-
-        return $this;
-    }
 
     /**
      * Enable/Disable the ROM Hack that doesn't leave Link stranded in DW
@@ -2650,6 +2098,31 @@ class Rom
     public function setMirrorlessSaveAndQuitToLightWorld(bool $enable = true): self
     {
         $this->write(0x1800A0, pack('C*', $enable ? 0x01 : 0x00));
+
+        return $this;
+    }
+
+    /**
+     * Sets intro text and, in the future, other game elements to mask settings
+     * visible to the player prior to the start of a run.  This is used when
+     * spoilers is set to "mystery".  This text is currently what is used by
+     * the entrance randomizer.
+     *
+     * @param bool $enable switch on or off
+     *
+     * @return $this
+     */
+    public function setMysteryMasking(bool $enable = true): self
+    {
+        if ($enable) {
+            $this->text->setString('intro_main', "{INTRO}\n Episode  III\n{PAUSE3}\n A Link to\n   the Past\n"
+                . "{PAUSE3}\n  Randomizer\n{PAUSE3}\nAfter mostly disregarding what happened in the first two games.\n"
+                . "{PAUSE3}\nLink awakens to his uncle leaving the house.\n{PAUSE3}\nHe just runs out the door,\n"
+                . "{PAUSE3}\ninto the rainy night.\n{PAUSE3}\n{CHANGEPIC}\nGanon has moved around all the items in Hyrule.\n"
+                . "{PAUSE7}\nYou will have to find all the items necessary to beat Ganon.\n"
+                . "{PAUSE7}\nThis is your chance to be a hero.\n{PAUSE3}\n{CHANGEPIC}\n"
+                . "You must get the 7 crystals to beat Ganon.\n{PAUSE9}\n{CHANGEPIC}", false);
+        }
 
         return $this;
     }
@@ -2711,15 +2184,29 @@ class Rom
     }
 
     /**
-     * Enable/Disable PoD EG correction
+     * Enable/Disable PoD / S&Q EG correction
      *
      * @param bool $enable switch on or off
      *
      * @return $this
      */
-    public function setPODEGfix(bool $enable = true): self
+    public function setSQEGFix(bool $enable = true): self
     {
         $this->write(0x1800A4, pack('C*', $enable ? 0x01 : 0x00));
+
+        return $this;
+    }
+
+    /**
+     * Enable/Disable Allow Accidental Major Glitch
+     *
+     * @param bool $enable switch on or off
+     *
+     * @return $this
+     */
+    public function setAllowAccidentalMajorGlitch(bool $enable = true): self
+    {
+        $this->write(0x180358, pack('C*', $enable ? 0x01 : 0x00));
 
         return $this;
     }
@@ -2806,29 +2293,15 @@ class Rom
     }
 
     /**
-     * Set the Pyramid Hole State.
+     * Set starting with Pseudo Boots.
      *
-     * @param bool $open
-     *
-     * @return $this
-     */
-    public function setPyramidHoleOpen(bool $open = false): self
-    {
-        $this->write(0x18008B, pack('C', $open ? 0x01 : 0x00));
-
-        return $this;
-    }
-
-    /**
-     * Set the Ganon's Tower State.
-     *
-     * @param bool $open
+     * @param bool $enable
      *
      * @return $this
      */
-    public function setGanonsTowerOpen(bool $open = false): self
+    public function setPseudoBoots(bool $enable = false): self
     {
-        $this->write(0x18008C, pack('C', $open ? 0x01 : 0x00));
+        $this->write(0x18008E, pack('C*', $enable ? 0x01 : 0x00));
 
         return $this;
     }
@@ -2900,6 +2373,13 @@ class Rom
     public function muteMusic(bool $enable = true): self
     {
         $this->write(0x18021A, pack('C', $enable ? 0x01 : 0x00));
+
+        return $this;
+    }
+
+    public function writeInitialSram(): self
+    {
+        $this->write(0x183000, pack('C*', ...$this->initial_sram->getInitialSram()));
 
         return $this;
     }
@@ -2994,7 +2474,7 @@ class Rom
     }
 
     /**
-     * Get the array of bytes written in the order they were written to the rom
+     * Get the array of bytes written in the order they were written to the ROM
      *
      * @return array
      */

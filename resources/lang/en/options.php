@@ -27,19 +27,28 @@ return [
                     ],
                 ],
                 [
-                    'header' => __('randomizer.glitches_required.options.major_glitches'),
+                    'header' => __('randomizer.glitches_required.options.hybrid_major_glitches'),
                     'content' => [
-                        'This setting requires knowledge of more advanced major glitches. Specifically:',
+                        'This setting requires knowledge of all glitches used in Overworld Glitches, as well as glitches in the underworld that can clip you into other dungeons.  Specifically:',
                         '<ul>'
-                            . '<li>Overworld fake flutes</li>'
-                            . '<li>Overworld screenwraps</li>'
-                            . '<li>Overworld and Underworld bootless clips (including 1-frame clips requiring buffering)</li>'
+                            . '<li>Underworld bootless clips (including 1-frame clips requiring buffering)</li>'
                             . '</ul>',
                         'Some additional changes have also been made:',
                         '<ul>'
                             . '<li>Fake worlds exist as per the original game (e.g. dying in a Dark World dungeon without defeating Agahnim will put you in the fake Dark World)</li>'
                             . '<li>Crystals always drop regardless of pendant conflicts (QoL fix from the original)</li>'
                             . '<li>Swamp Palace water levels do not drain when you exit the overworld screen (except for the first room)</li>'
+                            . '</ul>',
+                    ],
+                ],
+                [
+                    'header' => __('randomizer.glitches_required.options.major_glitches'),
+                    'content' => [
+                        'This setting requires knowledge of more advanced major glitches, as well as all glitches listed above. Specifically:',
+                        '<ul>'
+                            . '<li>Overworld fake flutes</li>'
+                            . '<li>Overworld screenwraps</li>'
+                            . '<li>Overworld and Underworld bootless clips (including 1-frame clips requiring buffering)</li>'
                             . '</ul>',
                     ],
                 ],
@@ -157,6 +166,12 @@ return [
                     'header' => __('randomizer.goal.options.triforce-hunt'),
                     'content' => [
                         'The Triforce has been shattered into 30 pieces and scattered throughout Hyrule! You must collect 20 of the 30 pieces and take them to Murahdahla to receive the Triforce. Who is Murahdahla I hear you ask? Why, he is obviously the younger brother of Sahasrahla and Aginah! Back from his vacation in Lorule you can find him hanging out around Hyrule Castle courtyard.',
+                    ],
+                ],
+                [
+                    'header' => __('randomizer.goal.options.ganonhunt'),
+                    'content' => [
+                        'The Triforce has been shattered into 50 pieces and scattered throughout Hyrule! You must first collect 40 of the 50 pieces, and only then will Ganon be vulnerable to your attacks!  Like Fast Ganon, the hole leading to Ganon has been made permanently accessible.  This goal is not available if entrances are randomized.',
                     ],
                 ],
             ],
@@ -590,7 +605,7 @@ return [
                 'menu_speed' => [
                     'header' => __('rom.settings.menu_speed'),
                     'content' => [
-                        'Change the speed of opening and closing the item menu. This is not available for race ROMS.',
+                        'Change the speed of opening and closing the item menu. This is not available for race ROMs.',
                     ],
                 ],
                 'heart_color' => [
@@ -602,19 +617,37 @@ return [
                 'music' => [
                     'header' => __('rom.settings.music'),
                     'content' => [
-                        'Enable or disable the original background music. You do not have to disable this if you wish to use MSU-1 packs. If left enabled and using an MSU-1 pack then the original music will act as an SPC fallback and will only play should an MSU-1 track fail (i.e. instead of silence).',
+                        'Enable or disable the background music, including MSU-1 playback.  MSU-1 users should leave this enabled.',
+                    ],
+                ],
+                'msu1resume' => [
+                    'header' => __('rom.settings.msu1resume'),
+                    'content' => [
+                        'Enables the MSU-1 music resume feature.  This feature allows the track that was playing to resume where it left off when re-entering the overworld.',
+                    ],
+                ],
+                'shuffle_sfx' => [
+                    'header' => __('rom.settings.shuffle_sfx'),
+                    'content' => [
+                        'Randomizes the sound effects within the game. This means everything can sound like anything else. Enable with caution!',
                     ],
                 ],
                 'quickswap' => [
                     'header' => __('rom.settings.quickswap'),
                     'content' => [
-                        'Allow items to be changed with the L and R buttons without opening the menu. This is not available for race ROMS (except when entrances are randomized).',
+                        'Allow items to be changed with the L and R buttons without opening the menu.',
                     ],
                 ],
                 'palette_shuffle' => [
                     'header' => __('rom.settings.palette_shuffle'),
                     'content' => [
                         'Randomizes the colour palettes within the game. This means everything can look extremely bizarre. Enable with caution!',
+                    ],
+                ],
+                'reduce_flashing' => [
+                    'header' => __('rom.settings.reduce_flashing'),
+                    'content' => [
+                        'Severely reduces the intensity of in-game flashing effects, or outright disables them.  Please use caution, your photosensitivity to effects may still vary.',
                     ],
                 ],
             ],

@@ -11,6 +11,7 @@ return [
             'crosskeys' => 'Crosskeys',
             'quick' => 'Súper Rápido',
             'nightmare' => 'Pesadilla',
+            'tournament' => 'Torneo',
             'custom' => 'Personalizado',
         ],
     ],
@@ -46,6 +47,7 @@ return [
         'options' => [
             'none' => 'Ninguno',
             'overworld_glitches' => 'Glitches de la Superfície',
+            'hybrid_major_glitches' => 'Glitches Mayores Híbridos',
             'major_glitches' => 'Glitches Mayores',
             'no_logic' => 'Sin lógica',
         ],
@@ -59,6 +61,7 @@ return [
             'dungeons' => 'Todas las mazmorras',
             'pedestal' => 'Pedestal de la Espada Maestra',
             'triforce-hunt' => 'Piezas de la Trifuerza',
+            'ganonhunt' => 'Caza de Ganon',
         ],
     ],
     'tower_open' => [
@@ -194,7 +197,9 @@ return [
         'race' => 'Generar ROM para carreras',
         'race_warning' => '<span class="running-now">sin spoilers</span>',
         'spoiler_race' => 'Generar ROM para carreras (con spoilers)',
+        'casual' => 'Generar ROM',
         'back' => 'Cambiar ajustes',
+        'forward' => 'Ver juego generado',
         'regenerate' => 'Generar otra vez',
         'regenerate_tooltip' => 'Generar otra partida con las mismas opciones',
         'generating' => 'Generando...',
@@ -204,7 +209,7 @@ return [
         'save_spoiler' => 'Guardar spoiler',
         'save_rom' => 'Guardar ROM',
     ],
-    // depricated
+    // deprecated
     'variation' => [
         'title' => 'Variación',
     ],

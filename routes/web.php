@@ -1,5 +1,9 @@
 <?php
 
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+
 Route::get('base_rom/settings', 'SettingsController@rom');
 
 Route::get('customizer/settings', 'SettingsController@customizer');
@@ -67,6 +71,8 @@ Route::prefix('{lang?}')->middleware('locale')->group(function () {
 
     Route::redirect('info', 'help', 301);
 
+    // Route::view('multiworld', 'multiworld');
+
     Route::view('options', 'options');
 
     Route::view('races', 'races');
@@ -85,6 +91,8 @@ Route::prefix('{lang?}')->middleware('locale')->group(function () {
 
     Route::view('watch', 'watch');
 
+    Route::view('cookies', 'cookie');
+
     Route::get('daily', static function () {
         $featured = ALttP\FeaturedGame::today();
         if (!$featured) {
@@ -100,7 +108,10 @@ Route::prefix('{lang?}')->middleware('locale')->group(function () {
             return view('daily', [
                 'hash' => $seed->hash,
                 'md5' => $build->hash,
-                'patch' => $build->patch,
+                'bpsLocation' => sprintf(
+                    '/bps/%s.bps',
+                    $build->hash
+                ),
                 'daily' => $featured->day,
             ]);
         }
@@ -117,8 +128,11 @@ Route::prefix('{lang?}')->middleware('locale')->group(function () {
             return view('patch_from_hash', [
                 'hash' => $hash,
                 'md5' => $build->hash,
-                'patch' => $build->patch,
                 'seed' => $seed,
+                'bpsLocation' => sprintf(
+                    '/bps/%s.bps',
+                    $build->hash
+                ),
                 'spoiler' => json_decode($seed->spoiler),
             ]);
         }

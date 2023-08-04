@@ -93,7 +93,7 @@ abstract class World
         // Initialize the Logic and Prizes for each Region that has them and
         // fill our LocationsCollection
         foreach ($this->regions as $region) {
-            if ($this->config('logic') !== 'None') {
+            if ($this->config('logic') !== 'NoLogic') {
                 $region->initalize();
             }
             $this->locations = $this->locations->merge($region->getLocations());
@@ -105,7 +105,7 @@ abstract class World
             $collected_items->setChecksForWorld($this->id);
             return $collected_items->has('Triforce')
                 || ($this->regions['North East Light World']->canEnter($this->locations, $collected_items) &&
-                    $collected_items->has('TriforcePiece', $this->config('item.Goal.Required')));
+                    ($this->config('goal', 'ganon') == 'triforce-hunt' && $collected_items->has('TriforcePiece', $this->config('item.Goal.Required'))));
         };
 
         // Handle configuration options that map to switches.
@@ -130,12 +130,45 @@ abstract class World
                 $free_item_text |= 0x16;
                 $free_item_menu |= 0x0C;
         }
+
+        if (in_array($this->config('logic'), ['HybridMajorGlitches', 'MajorGlitches', 'NoLogic']) || $this->config('canOneFrameClipUW', false)) {
+            $free_item_menu |= 0x10;
+        }
+
         $this->config['rom.freeItemText'] = $free_item_text;
         $this->config['rom.freeItemMenu'] = $free_item_menu;
-        
-        $this->config['item.overflow.count.Bow'] = 2;
+
+        # handle empty config values that might be sent from customizer
+        if ($this->config('item.overflow.count.Sword', null) === '') {
+            unset($this->config['item.overflow.count.Sword']);
+        }
+        if ($this->config('item.overflow.count.Armor', null) === '') {
+            unset($this->config['item.overflow.count.Armor']);
+        }
+        if ($this->config('item.overflow.count.Shield', null) === '') {
+            unset($this->config['item.overflow.count.Shield']);
+        }
+        if ($this->config('item.overflow.count.Bow', null) === '') {
+            unset($this->config['item.overflow.count.Bow']);
+        }
+        if ($this->config('item.overflow.count.BossHeartContainer', null) === '') {
+            unset($this->config['item.overflow.count.BossHeartContainer']);
+        }
+        if ($this->config('item.overflow.count.PieceOfHeart', null) === '') {
+            unset($this->config['item.overflow.count.PieceOfHeart']);
+        }
 
         switch ($this->config('item.pool')) {
+            case 'superexpert':
+                $this->config['item.overflow.count.Sword'] = 2;
+                $this->config['item.overflow.count.Armor'] = 0;
+                $this->config['item.overflow.count.Shield'] = 0;
+                $this->config['item.overflow.count.Bow'] = 1;
+                $this->config['item.overflow.count.BossHeartContainer'] = 0;
+                $this->config['item.overflow.count.PieceOfHeart'] = 0;
+                $this->config['shops.HardMode'] = true;
+
+                break;
             case 'expert':
                 $this->config['item.overflow.count.Sword'] = 2;
                 $this->config['item.overflow.count.Armor'] = 0;
@@ -143,6 +176,7 @@ abstract class World
                 $this->config['item.overflow.count.Bow'] = 1;
                 $this->config['item.overflow.count.BossHeartContainer'] = 2;
                 $this->config['item.overflow.count.PieceOfHeart'] = 8;
+                $this->config['shops.HardMode'] = true;
 
                 break;
             case 'hard':
@@ -152,6 +186,7 @@ abstract class World
                 $this->config['item.overflow.count.Bow'] = 1;
                 $this->config['item.overflow.count.BossHeartContainer'] = 6;
                 $this->config['item.overflow.count.PieceOfHeart'] = 16;
+                $this->config['shops.HardMode'] = true;
 
                 break;
             case 'crowd_control':
@@ -168,21 +203,57 @@ abstract class World
                 $this->config['item.count.TwentyRupees2'] = 4;
         }
 
+        switch ($this->config('item.functionality')) {
+            case 'superexpert':
+                $this->config['rom.CapeMagicUsage.Normal'] = 0x01;
+                $this->config['rom.CapeMagicUsage.Half'] = 0x02;
+                $this->config['rom.CapeMagicUsage.Quarter'] = 0x02;
+                $this->config['rom.CaneOfByrnaInvulnerability'] = false;
+                $this->config['rom.PowderedSpriteFairyPrize'] = 0x79; // bees
+                $this->config['rom.BottleFill.Health'] = 0x00; // nothing
+                $this->config['rom.BottleFill.Magic'] = 0x00; // nothing
+                $this->config['rom.CatchableFairies'] = false;
+                $this->config['rom.CatchableBees'] = true;
+                $this->config['rom.StunItems'] = 0x00;
+                $this->config['rom.SilversOnlyAtGanon'] = true;
+                $this->config['rom.NoFarieDrops'] = true;
+                break;
+            case 'expert':
+                $this->config['rom.CapeMagicUsage.Normal'] = 0x02;
+                $this->config['rom.CapeMagicUsage.Half'] = 0x04;
+                $this->config['rom.CapeMagicUsage.Quarter'] = 0x08;
+                $this->config['rom.CaneOfByrnaInvulnerability'] = false;
+                $this->config['rom.PowderedSpriteFairyPrize'] = 0xD8; // 1 heart
+                $this->config['rom.BottleFill.Health'] = 0x20; // 4 hearts
+                $this->config['rom.BottleFill.Magic'] = 0x20; // 1/4 magic refills
+                $this->config['rom.CatchableFairies'] = false;
+                $this->config['rom.CatchableBees'] = true;
+                $this->config['rom.StunItems'] = 0x00;
+                $this->config['rom.SilversOnlyAtGanon'] = true;
+                $this->config['rom.NoFarieDrops'] = true;
+                break;
+            case 'hard':
+                $this->config['rom.CapeMagicUsage.Normal'] = 0x02;
+                $this->config['rom.CapeMagicUsage.Half'] = 0x04;
+                $this->config['rom.CapeMagicUsage.Quarter'] = 0x08;
+                $this->config['rom.CaneOfByrnaInvulnerability'] = false;
+                $this->config['rom.PowderedSpriteFairyPrize'] = 0xD8; // 1 heart
+                $this->config['rom.BottleFill.Health'] = 0x38; // 7 hearts
+                $this->config['rom.BottleFill.Magic'] = 0x40; // 1/2 magic refills
+                $this->config['rom.CatchableFairies'] = false;
+                $this->config['rom.CatchableBees'] = true;
+                $this->config['rom.StunItems'] = 0x02;
+                $this->config['rom.SilversOnlyAtGanon'] = true;
+                $this->config['rom.NoFarieDrops'] = true;
+                break;
+        }
+
         $this->config['region.requireBetterBow'] = false;
         $this->config['region.requireBetterSword'] = false;
 
         if ($this->config('itemPlacement') === 'basic') {
             $this->config['region.requireBetterBow'] = true;
             $this->config['region.requireBetterSword'] = true;
-        }
-
-        switch ($this->config('item.functionality')) {
-            case 'expert':
-                $this->config['rom.HardMode'] = 2;
-
-                break;
-            case 'hard':
-                $this->config['rom.HardMode'] = 1;
         }
 
         // In swordless mode silvers are 100% required
@@ -278,10 +349,39 @@ abstract class World
         foreach ($this->shops as $name => $shop) {
             $copy->shops[$name] = $shop->copy();
         }
+        $boss_locations = [
+            ['Eastern Palace', ''],
+            ['Desert Palace', ''],
+            ['Tower of Hera', ''],
+            ['Palace of Darkness', ''],
+            ['Swamp Palace', ''],
+            ['Skull Woods', ''],
+            ['Thieves Town', ''],
+            ['Ice Palace', ''],
+            ['Misery Mire', ''],
+            ['Turtle Rock', ''],
+            ['Ganons Tower', 'bottom'],
+            ['Ganons Tower', 'middle'],
+            ['Ganons Tower', 'top'],
+        ];
+        foreach ($boss_locations as $location) {
+            $copy->getRegion($location[0])->setBoss($this->getRegion($location[0])->getBoss($location[1]), $location[1]);
+        }
 
         $copy->setPreCollectedItems($this->pre_collected_items->copy());
 
         return $copy;
+    }
+
+    /**
+     * Get a copy of config array for this world (for testing.)
+     *
+     * @return array
+     */
+    public function getConfig(): array
+    {
+        $config_copy = $this->config;
+        return $config_copy;
     }
 
     /**
@@ -293,9 +393,9 @@ abstract class World
     public function getGanonsTowerJunkFillRange(): array
     {
         if (
-            $this->config['logic'] === 'None'
+            $this->config['logic'] === 'NoLogic'
             || ($this->config['mode.state'] !== 'inverted'
-                && in_array($this->config['logic'], ['OverworldGlitches', 'MajorGlitches']))
+                && in_array($this->config['logic'], ['OverworldGlitches', 'HybridMajorGlitches', 'MajorGlitches']))
         ) {
             return [0, 0];
         }
@@ -725,9 +825,8 @@ abstract class World
     {
         $items = [];
 
-        $max_items = 216 - array_sum($this->config('item.advancement'));
         foreach ($this->config('item.advancement') as $item_name => $count) {
-            $loop = min($this->config('item.count.' . $item_name, $count), $max_items);
+            $loop = min($this->config('item.count.' . $item_name, $count), 216);
             for ($i = 0; $i < $loop; ++$i) {
                 $items[] = $item_name == 'BottleWithRandom' ? $this->getBottle() : Item::get($item_name, $this);
             }
@@ -832,7 +931,7 @@ abstract class World
             Item::get('BottleWithFairy', $this),
         ];
 
-        return $bottles[get_random_int($filled ? 1 : 0, count($bottles) - (($this->config('rom.HardMode', 0) > 0) ? 2 : 1))];
+        return $bottles[get_random_int($filled ? 1 : 0, count($bottles) - (($this->config('rom.CatchableFairies', true)) ? 1 : 2))];
     }
 
     /**
@@ -933,13 +1032,16 @@ abstract class World
             'crystals_ganon' => $this->config('crystals.ganon'),
             'crystals_tower' => $this->config('crystals.tower'),
             'tournament' => $this->config('tournament', false),
-            'size' => $this->isEnemized() ? 4 : 2,
+            'size' => 2,
             'hints' => $this->config('spoil.Hints'),
             'spoilers' => $this->config('spoilers', 'off'),
+            'allow_quickswap' => $this->config('allow_quickswap', true),
+            'pseudoboots' => $this->config('pseudoboots', false),
             'enemizer.boss_shuffle' => $this->config('enemizer.bossShuffle'),
             'enemizer.enemy_shuffle' => $this->config('enemizer.enemyShuffle'),
             'enemizer.enemy_damage' => $this->config('enemizer.enemyDamage'),
             'enemizer.enemy_health' => $this->config('enemizer.enemyHealth'),
+            'enemizer.pot_shuffle' => $this->config('enemizer.potShuffle'),
         ]);
 
         $this->spoiler['Bosses'] = [
@@ -960,10 +1062,6 @@ abstract class World
             "Ganons Tower" => "Agahnim 2",
             "Ganon" => "Ganon"
         ];
-
-        if ($this->config('rom.HardMode') !== null) {
-            $this->spoiler['meta']['difficulty_mode'] = $this->config('rom.HardMode', 0);
-        }
 
         $this->seed->spoiler = json_encode($this->spoiler);
 
@@ -1150,7 +1248,7 @@ abstract class World
     
 
     /**
-     * Set an override patch to write to the rom, in case randomization was done
+     * Set an override patch to write to the ROM, in case randomization was done
      * in an alternate fashion.
      *
      * @param array  $patch  patch data to overwrite with
@@ -1163,10 +1261,10 @@ abstract class World
     }
 
     /**
-     * write the current generated data to the Rom. If an override patch is set
+     * write the current generated data to the ROM. If an override patch is set
      * it will use that instead.
      *
-     * @param \ALttP\Rom   $rom   Rom to write data to
+     * @param \ALttP\Rom   $rom   ROM to write data to
      * @param bool         $save  save seed record
      *
      * @return \ALttP\Rom
@@ -1180,8 +1278,25 @@ abstract class World
                 }
             }
 
+            // misc patches for inverted ER until we can update ER
+            if ($this->config('mode.state') === 'inverted') {
+                // remove diggable light world portals
+                $rom->write(snes_to_pc(0x1BC428), pack('C*', 0x00));
+                $rom->write(snes_to_pc(0x1BC43A), pack('C*', 0x00));
+                $rom->write(snes_to_pc(0x1BC590), pack('C*', 0x00));
+                $rom->write(snes_to_pc(0x1BC5A1), pack('C*', 0x00));
+                $rom->write(snes_to_pc(0x1BC5B1), pack('C*', 0x00));
+                $rom->write(snes_to_pc(0x1BC5C7), pack('C*', 0x00));
+            }
+
+            $rom->setPseudoBoots($this->config('pseudoboots', false));
+
             if ($save) {
-                $this->saveSeedRecord();
+                $hash = $this->saveSeedRecord();
+
+                $rom->setSeedString(str_pad(sprintf("VT %s", $hash), 21, ' '));
+
+                $rom->setStartScreenHash($this->config('override_start_screen', false) ?: $this->seed->hashArray());
 
                 $this->seed->patch = json_encode($rom->getWriteLog());
                 $this->seed->save();
@@ -1197,21 +1312,45 @@ abstract class World
             $rom->setCredit($key, $value);
         }
 
-        foreach ($this->getRegions() as $name => $region) {
-            $region->getLocations()->getNonEmptyLocations()->each(function ($location) use ($rom) {
-                $location->writeItem($rom);
-            });
-            // Clear out remaining locations if the pool was smaller than number of locations
-            $region->getLocations()->getEmptyLocations()->each(function ($location) use ($rom) {
-                $location->setItem(Item::get('Nothing', $this));
-                $location->writeItem($rom);
-            });
+        if (!$this->config('multiworld', false)) {
+            foreach ($this->getRegions() as $region) {
+                $region->getLocations()->getNonEmptyLocations()->each(function ($location) use ($rom) {
+                    $location->writeItem($rom);
+                });
+                // Clear out remaining locations if the pool was smaller than number of locations
+                $region->getLocations()->getEmptyLocations()->each(function ($location) use ($rom) {
+                    $location->setItem(Item::get('Nothing', $this));
+                    $location->writeItem($rom);
+                });
+            }
+        }
+
+        if ($this->config('mode.state') === 'standard') {
+            $this->setEscapeFills($rom);
         }
 
         $rom->setGoalRequiredCount($this->config('item.Goal.Required', 0) ?: 0);
         $rom->setGoalIcon($this->config('item.Goal.Icon', 'triforce'));
 
-        $rom->setHardMode($this->config('rom.HardMode', 0));
+        // Set item functionality settings
+        $rom->setCaneOfByrnaSpikeCaveUsage();
+        $rom->setCapeSpikeCaveUsage();
+        $rom->setByrnaCaveSpikeDamage(0x08);
+        // Bryna magic amount used per "cycle"
+        $rom->write(0x45C42, pack('C*', 0x04, 0x02, 0x01));
+
+        $rom->setCapeRegularMagicUsage(
+            $this->config('rom.CapeMagicUsage.Normal', 0x04),
+            $this->config('rom.CapeMagicUsage.Half', 0x08),
+            $this->config('rom.CapeMagicUsage.Quarter', 0x10),
+        );
+        $rom->setCaneOfByrnaInvulnerability($this->config('rom.CaneOfByrnaInvulnerability', true));
+        $rom->setPowderedSpriteFairyPrize($this->config('rom.PowderedSpriteFairyPrize', 0xE3));
+        $rom->setBottleFills([$this->config('rom.BottleFill.Health', 0xA0), $this->config('rom.BottleFill.Magic', 0x80)]);
+        $rom->setCatchableFairies($this->config('rom.CatchableFairies', true));
+        $rom->setCatchableBees($this->config('rom.CatchableBees', true));
+        $rom->setStunItems($this->config('rom.StunItems', 0x03));
+        $rom->setSilversOnlyAtGanon($this->config('rom.SilversOnlyAtGanon', false));
 
         $rom->setRupoorValue($this->config('item.value.Rupoor', 0) ?: 0);
 
@@ -1224,7 +1363,6 @@ abstract class World
         $rom->setGenericKeys($this->config('rom.genericKeys', false));
         $rom->setupCustomShops($this->getShops());
         $rom->setRupeeArrow($this->config('rom.rupeeBow', false));
-        $rom->setLockAgahnimDoorInEscape(true);
         $rom->setWishingWellChests(true);
         $rom->setWishingWellUpgrade(false);
         $rom->setHyliaFairyShop(true);
@@ -1256,8 +1394,8 @@ abstract class World
             0x51, 0x06, 0x52, 0xFF, // 6 +5 bomb upgrades -> +10 bomb upgrade
             0x53, 0x06, 0x54, 0xFF, // 6 +5 arrow upgrades -> +10 arrow upgrade
             0x58, 0x01, $this->config('rom.rupeeBow', false) ? 0x36 : 0x43, 0xFF, // silver arrows -> 1 arrow
-            0x3E, $this->config('item.overflow.count.BossHeartContainer', 10), 0x47, 0xFF, // boss heart -> 20 rupees
-            0x17, $this->config('item.overflow.count.PieceOfHeart', 24), 0x47, 0xFF, // piece of heart -> 20 rupees
+            0x3E, $this->config('item.overflow.count.BossHeartContainer', 10), Item::get($this->config('item.overflow.replacement.BossHeartContainer', 'TwentyRupees2'), $this)->getBytes()[0], 0xFF, // boss heart -> 20 rupees
+            0x17, $this->config('item.overflow.count.PieceOfHeart', 24), Item::get($this->config('item.overflow.replacement.PieceOfHeart', 'TwentyRupees2'), $this)->getBytes()[0], 0xFF, // piece of heart -> 20 rupees
         ]);
 
         switch ($this->config['goal']) {
@@ -1266,19 +1404,21 @@ abstract class World
 
                 // no break
             case 'pedestal':
-                $rom->setPyramidHoleOpen(false);
                 $rom->setGanonInvincible('yes');
                 break;
             case 'dungeons':
-                $rom->setPyramidHoleOpen(false);
                 $rom->setGanonInvincible('dungeons');
                 break;
+            case 'ganonhunt':
+                $rom->initial_sram->preOpenPyramid();
+                $rom->setGanonInvincible('triforce_pieces');
+                break;
             case 'fast_ganon':
-                $rom->setPyramidHoleOpen(true);
+                $rom->initial_sram->preOpenPyramid();
 
                 // no break
             default:
-                $rom->setGanonInvincible('custom');
+                $rom->setGanonInvincible('crystals_only');
         }
 
         if ($this->config('rom.mapOnPickup', false)) {
@@ -1294,6 +1434,7 @@ abstract class World
 
         $rom->setMapMode($this->config('rom.mapOnPickup', false));
         $rom->setCompassMode($this->config('rom.dungeonCount', 'off'));
+        $rom->setCompassCountTotals();
         $rom->setFreeItemTextMode($this->config('rom.freeItemText', 0x00));
         $rom->setFreeItemMenu($this->config('rom.freeItemMenu', 0x00));
         $rom->setDiggingGameRng(get_random_int(1, 30));
@@ -1309,6 +1450,20 @@ abstract class World
 
         $rom->setGameState($this->config('mode.state'));
         $rom->setSwordlessMode($this->config('mode.weapons') === 'swordless');
+        if ($this->config('mode.state') !== 'inverted') {
+            switch ($this->config('rom.logicMode', $this->config['logic'])) {
+                case 'MajorGlitches':
+                case 'HybridMajorGlitches':
+                case 'NoLogic':
+                case 'OverworldGlitches':
+                    $rom->setLockAgahnimDoorInEscape(false);
+                    break;
+                case 'NoGlitches':
+                default:
+                    $rom->setLockAgahnimDoorInEscape(true);
+                    break;
+            }
+        }
 
         if (!$this->getLocation("Link's Uncle")->getItem() instanceof Item\Sword) {
             $rom->removeUnclesSword();
@@ -1320,7 +1475,8 @@ abstract class World
             $rom->removeUnclesShield();
         }
 
-        $rom->setStartingEquipment($this->pre_collected_items);
+        $rom->initial_sram->setStartingEquipment($this->pre_collected_items, $this->config);
+        $rom->setBallNChainDungeon(0x02);
         $rom->setCapacityUpgradeFills([
             $this->config('item.value.BombUpgrade5', 50),
             $this->config('item.value.BombUpgrade10', 50),
@@ -1334,51 +1490,59 @@ abstract class World
         $rom->setBlueClock($this->config('item.value.BlueClock', 0) ?: 0);
         $rom->setRedClock($this->config('item.value.RedClock', 0) ?: 0);
         $rom->setGreenClock($this->config('item.value.GreenClock', 0) ?: 0);
-        $rom->setStartingTime($this->config('rom.timerStart', 0) ?: 0);
+        $rom->initial_sram->setStartingTimer($this->config('rom.timerStart', 0) ?: 0);
 
         switch ($this->config('rom.logicMode', $this->config['logic'])) {
+            case 'HybridMajorGlitches':
             case 'MajorGlitches':
-            case 'None':
-                $type_flag = 'G';
+            case 'NoLogic':
                 $rom->setSwampWaterLevel(false);
                 $rom->setPreAgahnimDarkWorldDeathInDungeon(false);
                 $rom->setSaveAndQuitFromBossRoom(true);
                 $rom->setWorldOnAgahnimDeath(false);
                 $rom->setRandomizerSeedType('MajorGlitches');
                 $rom->setWarningFlags(bindec('01100000'));
-                $rom->setPODEGfix(false);
+                $rom->setAllowAccidentalMajorGlitch(true);
+                $rom->setSQEGFix(false);
                 break;
             case 'OverworldGlitches':
-                $type_flag = 'S';
                 $rom->setPreAgahnimDarkWorldDeathInDungeon(false);
                 $rom->setSaveAndQuitFromBossRoom(true);
-                $rom->setWorldOnAgahnimDeath(true);
+                $rom->setWorldOnAgahnimDeath(false);
                 $rom->setRandomizerSeedType('OverworldGlitches');
                 $rom->setWarningFlags(bindec('01000000'));
-                $rom->setPODEGfix(false);
+                $rom->setAllowAccidentalMajorGlitch(true);
+                $rom->setSQEGFix(false);
                 break;
             case 'NoGlitches':
             default:
-                $type_flag = 'C';
                 $rom->setSaveAndQuitFromBossRoom(true);
                 $rom->setWorldOnAgahnimDeath(true);
-                $rom->setPODEGfix(true);
+                $rom->setAllowAccidentalMajorGlitch(false);
+                $rom->setSQEGFix(true);
                 break;
         }
 
-        $rom->setGanonsTowerOpen($this->config('crystals.tower') === 0);
+        if ($this->config('crystals.tower') === 0) {
+            $rom->initial_sram->preOpenGanonsTower();
+        }
 
         $rom->setGameType('item');
 
+        $rom->setMysteryMasking($this->config('spoilers', 'on') === 'mystery');
+
+        $rom->setPseudoBoots($this->config('pseudoboots', false));
+
         $rom->writeCredits();
         $rom->writeText();
+        $rom->writeInitialSram();
 
         if ($save) {
             $hash = $this->saveSeedRecord();
 
             $rom->setSeedString(str_pad(sprintf("VT %s", $hash), 21, ' '));
 
-            $rom->setStartScreenHash($this->seed->hashArray());
+            $rom->setStartScreenHash($this->config('override_start_screen', false) ?: $this->seed->hashArray());
 
             $this->seed->patch = json_encode($rom->getWriteLog());
             $this->seed->save();
@@ -1388,10 +1552,104 @@ abstract class World
     }
 
     /**
+     * Set the ammo given for escape, based on available weapons
+     *
+     * @param \ALttP\Rom   $rom   Rom to write data to
+     *
+     * @return void
+     */
+    public function setEscapeFills(Rom $rom)
+    {
+        $uncle_items = new ItemCollection;
+        $uncle_items->setChecksForWorld($this->id);
+        $uncle_items = $uncle_items->addItem($this->getLocation("Link's Uncle")->getItem());
+
+        // Add starting items if uncle doesn't have a weapon.  Temporarily disable ignoreCanKillEscapeThings for this check
+        $ignoreCanKillEscapeThings = $this->config('ignoreCanKillEscapeThings', false);
+        $this->config['ignoreCanKillEscapeThings'] = false;
+        if (!$uncle_items->canKillEscapeThings($this)) {
+            $uncle_items = $uncle_items->merge($this->getPreCollectedItems());
+        }
+        $this->config['ignoreCanKillEscapeThings'] = $ignoreCanKillEscapeThings;
+
+        if ($uncle_items->hasSword() || $uncle_items->has('Hammer')) {
+            $rom->setEscapeFills(0b00000000);
+            $rom->setUncleSpawnRefills(0, 0, 0);
+            $rom->setZeldaSpawnRefills(0, 0, 0);
+            $rom->setMantleSpawnRefills(0, 0, 0);
+        } elseif (
+            $uncle_items->has('FireRod')
+            || $uncle_items->has('CaneOfSomaria')
+            || ($uncle_items->has('CaneOfByrna') && $this->config('enemizer.enemyHealth', 'default') == 'default')
+        ) {
+            $rom->setEscapeFills(0b00000100);
+            $rom->setUncleSpawnRefills(
+                $this->config('rom.EscapeRefills.Uncle.Magic', 0x80),
+                0,
+                0
+            );
+            $rom->setZeldaSpawnRefills(
+                $this->config('rom.EscapeRefills.Zelda.Magic', 0x20),
+                0,
+                0
+            );
+            $rom->setMantleSpawnRefills(
+                $this->config('rom.EscapeRefills.Mantle.Magic', 0x20),
+                0,
+                0
+            );
+            if ($this->config('rom.EscapeAssist', false)) {
+                $rom->setEscapeAssist(0b00000100);
+            }
+        } elseif ($uncle_items->canShootArrows($this)) {
+            $rom->setEscapeFills(0b00000001);
+            $rom->setUncleSpawnRefills(
+                0,
+                0,
+                $this->config('rom.EscapeRefills.Uncle.Arrows', 70)
+            );
+            $rom->setZeldaSpawnRefills(
+                0,
+                0,
+                $this->config('rom.EscapeRefills.Zelda.Arrows', 10)
+            );
+            $rom->setMantleSpawnRefills(
+                0,
+                0,
+                $this->config('rom.EscapeRefills.Mantle.Arrows', 10)
+            );
+            if ($this->config('rom.EscapeAssist', false)) {
+                $rom->setEscapeAssist(0b00000001);
+            }
+        } elseif ($uncle_items->has('TenBombs') || $this->config('logic') !== 'NoLogic') {
+            // TenBombs, or give player bombs if uncle was plando'd to not have a weapon.
+            $rom->setEscapeFills(0b00000010);
+            $rom->setUncleSpawnRefills(
+                0,
+                $this->config('rom.EscapeRefills.Uncle.Bombs', 50),
+                0
+            );
+            $rom->setZeldaSpawnRefills(
+                0,
+                $this->config('rom.EscapeRefills.Zelda.Bombs', 3),
+                0
+            );
+            $rom->setMantleSpawnRefills(
+                0,
+                $this->config('rom.EscapeRefills.Mantle.Bombs', 3),
+                0
+            );
+            if ($this->config('rom.EscapeAssist', false)) {
+                $rom->setEscapeAssist(0b00000010);
+            }
+        }
+    }
+
+    /**
      * This is a quick hack to get prizes shuffled, will adjust later when we model sprites.
      * this now also handles prize pull trees.
      *
-     * @param \ALttP\Rom  $rom  Rom to write data to
+     * @param \ALttP\Rom  $rom  ROM to write data to
      *
      * @return void
      */
@@ -1410,7 +1668,7 @@ abstract class World
         }, $this->getAllDrops());
 
         // hard+ does not allow fairies/full magics
-        if ($this->config('rom.HardMode', 0) >= 2) {
+        if ($this->config('rom.NoFarieDrops', false)) {
             $drop_bytes = str_replace([0xE0, 0xE3], [0xDF, 0xD8], $drop_bytes);
         }
 
@@ -1523,6 +1781,7 @@ abstract class World
         return $this->config('enemizer.bossShuffle') != 'none'
             || $this->config('enemizer.enemyShuffle') != 'none'
             || $this->config('enemizer.enemyDamage') != 'default'
-            || $this->config('enemizer.enemyHealth') != 'default';
+            || $this->config('enemizer.enemyHealth') != 'default'
+            || $this->config('enemizer.potShuffle') != 'off';
     }
 }

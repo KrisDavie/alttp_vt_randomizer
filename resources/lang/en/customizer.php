@@ -47,6 +47,10 @@ return [
             'title' => 'Mirror Wrap',
             'description' => 'One may be required to use Mirror to auto scroll to a different location.',
         ],
+        'canTransitionWrapped' => [
+            'title' => 'Screenwrap Transition',
+            'description' => 'One may be required to hit a transition from outside the current overworld screen to get an auto scroll.',
+        ],
         'canOneFrameClipOW' => [
             'title' => 'One Frame Clip (overworld)',
             'description' => 'You don’t want this. Trust me.',
@@ -80,8 +84,8 @@ return [
             'description' => 'When this is selected all bets are off, and nothing below matters.',
         ],
         'logicMode' => [
-            'title' => 'Glitches Required Rom "Fixes"',
-            'description' => 'Set the type of rom fixes applied.  Does not change item placement logic.'
+            'title' => 'Glitches Required ROM "Fixes"',
+            'description' => 'Set the type of ROM fixes applied.  Does not change item placement logic.'
         ]
     ]
 ];

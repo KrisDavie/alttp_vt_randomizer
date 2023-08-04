@@ -57,10 +57,12 @@ Vue.component(
   "vt-sprite-select",
   require("./components/VTSpriteSelect.vue").default
 );
+Vue.component("vt-sprite-loader", require("./components/VTSpriteLoader.vue").default);
 Vue.component("vt-text", require("./components/VTText.vue").default);
-Vue.component("Streams", require("./components/Streams").default);
+//Vue.component("Streams", require("./components/Streams").default);
 
 // Views
+Vue.component("Multiworld", require("./views/Multiworld.vue").default);
 Vue.component("Customizer", require("./views/Customizer.vue").default);
 Vue.component("Hashloader", require("./views/HashLoader.vue").default);
 Vue.component("Randomizer", require("./views/Randomizer.vue").default);

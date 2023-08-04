@@ -27,6 +27,21 @@ return [
                     ],
                 ],
                 [
+                    'header' => __('randomizer.glitches_required.options.hybrid_major_glitches'),
+                    'content' => [
+                        'Für Hybrid Major Gitches wird Wissen über alle in Overworld Glitches vorkommenden Glitches vorausgesetzt, sowie über folgende Clips, um sich in der Underworld zwischen mehreren Höhlen und Dungeons bewegen zu können:',
+                        '<ul>'
+                            . '<li>Underworld bootless clips (auch Ein-Frame-Clips, die Buffern benötigen)</li>'
+                            . '</ul>',
+                        'Sonstige Änderungen:',
+                        '<ul>'
+                            . '<li>Fake worlds existieren wie im normalen Spiel (z. B. in einem Dark World-Dungeon zu sterben, ohne Agahnim besiegt zu haben, bringt einen in die Fake Dark World)</li>'
+                            . '<li>Kristalle fallen immer, selbst bei Amulett-Konflikten (Verbesserung zum Original)</li>'
+                            . '<li>Die Wasserstände im Sumpfpalast (Swamp Palace) werden (abgesehen vom Eingangsraum) nicht zurückgesetzt, wenn man die Overworld betritt</li>'
+                            . '</ul>',
+                    ],
+                ],
+                [
                     'header' => __('randomizer.glitches_required.options.major_glitches'),
                     'content' => [
                         'Für Major Glitches wird Wissen über Major Glitches vorrausgesetzt die ein bisschen fortgeschrittener sind. Folgende Glitches die du beherrschen solltest:',
@@ -157,6 +172,12 @@ return [
                     'header' => __('randomizer.goal.options.triforce-hunt'),
                     'content' => [
                         'Das Triforce wurde in 30 Teile zerschlagen und in ganz Hyrule verteilt! Du musst 20 von den 30 Teilen sammeln und sie zu Murahdahla bringen um das Triforce zu erhalten. Wer Murahdahla ist fragst du? Wieso? Er ist doch ganz klar der jüngere Bruder von Sahasrahla und Aginah! Er ist zurück aus seine Urlaub in Lorule und hängt jetzt im Hof von Schloss Hyrule ab.',
+                    ],
+                ],
+                [
+                    'header' => __('randomizer.goal.options.ganonhunt'),
+                    'content' => [
+                        'Das Triforce wurde in 50 Teile zerschlagen und in ganz Hyrule verteilt! Du musst 40 von den 50 Teilen sammeln, um Ganon verwundbar zu machen! Wie bei Fast Ganon ist das Loch in der Pyramide permanent geöffnet. Dieses Ziel ist nicht verfügbar, wenn Eingänge vermischt sind.',
                     ],
                 ],
             ],
@@ -481,7 +502,7 @@ return [
                             . '<li>Feuerstab + Volle Auffüllung der Magie</li>'
                             . '<li>Somaria Stab + Volle Auffüllung der Magie</li>'
                             . '<li>Byrna Stab + Volle Auffüllung der Magie</li>'
-                        . '</ul>',
+                            . '</ul>',
                         'Falls du keine Pfeile oder Magie mehr haben solltest, kannst du die Funktion "Save and Quit" nutzen um sie wieder teilweise aufzufüllen damit du fortfahren kannst.',
                     ],
                 ],
@@ -602,19 +623,37 @@ return [
                 'music' => [
                     'header' => __('rom.settings.music'),
                     'content' => [
-                        'Aktiviere oder deaktiviere die originale Hintergrundmusik. Du musst es nicht deaktivieren um  MSU-1 Packs zu nutzen. Falls es aktiviert bleibt während man einen MSU-1 Pack nutzt, dient es als SPC-Fallback und spielt nur Hintergrundmusik ab, falls ein Fehler in der MSU-1 Spur vorliegt (anstatt kompletter Stille)..',
+                        'Aktiviere oder deaktiviere die originale Hintergrundmusik.',
+                    ],
+                ],
+                'msu1resume' => [
+                    'header' => __('rom.settings.msu1resume'),
+                    'content' => [
+                        'Aktiviert die Fortsetzung von MSU-1 Musikstücken. Diese Funktion lässt das Oberwelt-Musikstück an der Stelle fortsetzen, an der es unterbrochen wurde, wenn die Oberwelt erneut betreten wird.',
+                    ],
+                ],
+                'shuffle_sfx' => [
+                    'header' => __('rom.settings.shuffle_sfx'),
+                    'content' => [
+                        'Vertauscht alle Soundeffekte des Spiels. Das bedeutet, dass alles wie alles mögliche andere klingen kann. Mit Vorsicht zu verwenden!',
                     ],
                 ],
                 'quickswap' => [
                     'header' => __('rom.settings.quickswap'),
                     'content' => [
-                        'Erlaubt es den Gegendstand mit L und R zu wechseln ohne das Menü zu öffnen. Dies ist nicht für Rennen verfügbar (außer für Entrance Randomizer).',
+                        'Erlaubt es den Gegendstand mit L und R zu wechseln ohne das Menü zu öffnen.',
                     ],
                 ],
                 'palette_shuffle' => [
                     'header' => __('rom.settings.palette_shuffle'),
                     'content' => [
                         'Die Farbpalleten werden zufällig ausgewählt im Spiel. Dadurch könnte alles sehr bizarr aussehen. Mit Vorsicht aktivieren!',
+                    ],
+                ],
+                'reduce_flashing' => [
+                    'header' => __('rom.settings.reduce_flashing'),
+                    'content' => [
+                        'Die Intensität von Blitzeffekten im Spiel wird deutlich reduziert oder sie werden ganz ausgeschaltet.  Vorsicht: Deine Lichtempfindlichkeit kann möglicherweise dennoch auf manche Effekte reagieren.',
                     ],
                 ],
             ],

@@ -11,6 +11,7 @@ return [
             'crosskeys' => 'Crosskeys',
             'quick' => 'Super Schnell',
             'nightmare' => 'Albtraum',
+            'tournament' => 'Turnier',
             'custom' => 'Benutzerdefiniert',
         ],
     ],
@@ -46,6 +47,7 @@ return [
         'options' => [
             'none' => 'Keine',
             'overworld_glitches' => 'Overworld Glitches',
+            'hybrid_major_glitches' => 'Hybrid Major Glitches',
             'major_glitches' => 'Major Glitches',
             'no_logic' => 'Keine Logik',
         ],
@@ -59,6 +61,7 @@ return [
             'dungeons' => 'Alle Dungeons',
             'pedestal' => 'Master-Schwert Sockel',
             'triforce-hunt' => 'Triforce-Splitter',
+            'ganonhunt' => 'Ganonjagd',
         ],
     ],
     'tower_open' => [
@@ -196,6 +199,7 @@ return [
         'spoiler_race' => 'ROM für Spoiler Rennen',
         'casual' => 'Generiere ROM',
         'back' => 'Ändere Einstellung',
+        'forward' => 'Generiertes Spiel anzeigen',
         'regenerate' => 'Erneut erstellen',
         'regenerate_tooltip' => 'Erstellt ein neues Spiel mit den gleichen Einstellungen',
         'generating' => 'Am erstellen...',
@@ -203,9 +207,9 @@ return [
     'details' => [
         'title' => 'Spiel Details',
         'save_spoiler' => 'Speichere Spoiler',
-        'save_rom' => 'Speichere Rom',
+        'save_rom' => 'Speichere ROM',
     ],
-    // depricated
+    // deprecated
     'variation' => [
         'title' => 'Variation',
     ],

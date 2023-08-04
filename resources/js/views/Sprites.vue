@@ -11,7 +11,7 @@
         class="sprite"
         v-show="searchEx.test(sprite.name) || searchEx.test(sprite.author)"
       >
-        <div :class="'sprite-preview icon-custom-' + sprite.name.replace(/[ \.\(\)\']/g, '')"></div>
+        <div :class="'sprite-preview icon-custom-' + sprite.name.replace(/[ \.\(\)\'\/]/g, '')"></div>
         <div class="sprite-name">{{ sprite.name }}</div>
         <div class="sprite-author">by: {{ sprite.author }}</div>
       </div>
@@ -41,7 +41,7 @@ export default {
       }).length;
     },
     sprites() {
-      return this.$store.state.sprites.filter(sprite => sprite.file);
+      return this.$store.state.sprites.filter(sprite => sprite.file && sprite.author !== 'Nintendo');
     }
   }
 };
@@ -71,6 +71,7 @@ export default {
   height: 96px;
   background-size: auto 96px;
   image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 .sprite-name {
   position: absolute;

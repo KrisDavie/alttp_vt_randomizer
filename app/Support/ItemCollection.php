@@ -6,6 +6,7 @@ use ALttP\Item;
 use ALttP\World;
 use ArrayIterator;
 use Illuminate\Contracts\Support\Arrayable;
+use Traversable;
 
 /**
  * Collection of Items, maintains counts of items collected as well.
@@ -307,7 +308,7 @@ class ItemCollection extends Collection
      *
      * @return int
      */
-    public function count()
+    public function count(): int
     {
         return (int) array_sum($this->item_counts);
     }
@@ -317,7 +318,7 @@ class ItemCollection extends Collection
      *
      * @return ArrayIterator
      */
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return new ArrayIterator($this->toArray());
     }
@@ -329,7 +330,7 @@ class ItemCollection extends Collection
      *
      * @return void
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         unset($this->item_counts[$offset]);
         unset($this->items[$offset]);
@@ -413,7 +414,7 @@ class ItemCollection extends Collection
      */
     public function canFly(World $world)
     {
-        return $this->has('OcarinaActive') || $this->has('OcarinaInactive') && $this->canActivateOcarina($world);
+        return $this->has('OcarinaActive') || ($this->has('OcarinaInactive') && $this->canActivateOcarina($world));
     }
 
     private function canActivateOcarina(World $world)
@@ -438,13 +439,30 @@ class ItemCollection extends Collection
     }
 
     /**
+     * Requirements for acquiring a fairy
+     */
+    public function canAcquireFairy($world = null)
+    {
+        if ($world !== null && !$world->config('rom.CatchableFairies', true)) {
+            return False;
+        }
+        return True;
+    }
+
+    /**
      * Requirements for water (bunny) revival
      *
      * @return bool
      */
-    public function canBunnyRevive(): bool
+    public function canBunnyRevive($world = null): bool
     {
-        return $this->hasABottle() && $this->has('BugCatchingNet');
+        $canBunnyRevive = $this->hasABottle() && $this->has('BugCatchingNet');
+
+        if ($world !== null) {
+            $canBunnyRevive = $canBunnyRevive && $this->canAcquireFairy($world);
+        }
+
+        return $canBunnyRevive;
     }
 
     /**
@@ -460,15 +478,15 @@ class ItemCollection extends Collection
         switch ($min_level) {
             case 2:
                 return $this->has('BowAndSilverArrows')
-                    || ($this->has('ProgressiveBow', 2) 
+                    || ($this->has('ProgressiveBow', 2)
                         && (!$world->config('rom.rupeeBow', false) || $this->has('ShopArrow')))
                     || ($this->has('SilverArrowUpgrade')
                         && ($this->has('Bow') || $this->has('BowAndArrows') || $this->has('ProgressiveBow')));
             case 1:
             default:
-                return (($this->has('Bow') || $this->has('ProgressiveBow')) 
-                        && (!$world->config('rom.rupeeBow', false)
-                            || $this->has('ShopArrow') || $this->has('SilverArrowUpgrade')))
+                return (($this->has('Bow') || $this->has('ProgressiveBow'))
+                    && (!$world->config('rom.rupeeBow', false)
+                        || $this->has('ShopArrow') || $this->has('SilverArrowUpgrade')))
                     || $this->has('BowAndArrows')
                     || $this->has('BowAndSilverArrows');
         }
@@ -492,10 +510,19 @@ class ItemCollection extends Collection
      *
      * @return bool
      */
-    public function canExtendMagic($bars = 2.0)
+    public function canExtendMagic($world = null, $bars = 2.0)
     {
-        return ($this->has('QuarterMagic') ? 4 : ($this->has('HalfMagic') ? 2 : 1))
-            * ($this->bottleCount() + 1) >= $bars;
+        $magicModifier = 1.0;
+        if ($world !== null) {
+            $magicModifier = $world->config('rom.BottleFill.Magic', 0x80) / 0x80;
+            if ($magicModifier > 1) {
+                $magicModifier = 1.0;
+            }
+        }
+
+        $baseMagic = ($this->has('QuarterMagic') ? 4 : ($this->has('HalfMagic') ? 2 : 1));
+        $bottleMagic = $baseMagic * $this->bottleCount() * $magicModifier;
+        return ($baseMagic + $bottleMagic) >= $bars;
     }
 
     /**

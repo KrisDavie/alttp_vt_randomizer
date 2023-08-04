@@ -11,6 +11,7 @@ return [
             'crosskeys' => 'Crosskeys',
             'quick' => 'Super Quick',
             'nightmare' => 'Nightmare',
+            'tournament' => 'Tournament',
             'custom' => 'Custom',
         ],
     ],
@@ -46,6 +47,7 @@ return [
         'options' => [
             'none' => 'None',
             'overworld_glitches' => 'Overworld Glitches',
+            'hybrid_major_glitches' => 'Hybrid Major Glitches',
             'major_glitches' => 'Major Glitches',
             'no_logic' => 'No Logic',
         ],
@@ -59,6 +61,7 @@ return [
             'dungeons' => 'All Dungeons',
             'pedestal' => 'Master Sword Pedestal',
             'triforce-hunt' => 'Triforce Pieces',
+            'ganonhunt' => 'Ganonhunt',
         ],
     ],
     'tower_open' => [
@@ -188,13 +191,16 @@ return [
             'off' => 'Disabled',
             'on' => 'Enabled',
             'generate' => 'Only on Generate',
+            'mystery' => 'Mystery (settings hidden)'
         ],
     ],
     'generate' => [
         'race' => 'Generate Race ROM',
         'race_warning' => 'Spoilers will <span class="running-now">never</span> be available for this option.',
         'spoiler_race' => 'Generate Normal ROM',
+        'casual' => 'Generate ROM',
         'back' => 'Change Settings',
+        'forward' => 'View Generated Game',
         'regenerate' => 'Generate Again',
         'regenerate_tooltip' => 'Generate new game with same settings',
         'generating' => 'Generating...',
@@ -202,9 +208,9 @@ return [
     'details' => [
         'title' => 'Game Details',
         'save_spoiler' => 'Save Spoiler',
-        'save_rom' => 'Save Rom',
+        'save_rom' => 'Save ROM',
     ],
-    // depricated
+    // deprecated
     'variation' => [
         'title' => 'Variation',
     ],

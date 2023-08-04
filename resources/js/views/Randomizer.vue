@@ -9,9 +9,19 @@
       <span class="message">{{ this.error }}</span>
     </div>
     <rom-loader v-if="!romLoaded" @update="updateRom" @error="onError"></rom-loader>
-    <div v-if="romLoaded && !gameLoaded && !generating" class="card border-success my-1">
+    <div v-if="romLoaded && !gameLoaded && !generating" class="card border-success">
       <div class="card-header bg-success card-heading-btn">
-        <h3 class="card-title text-white">{{ $t('randomizer.title') }}</h3>
+        <h3 class="card-title text-white float-left">{{ $t('randomizer.title') }}</h3>
+        <div class="btn-toolbar float-right" v-if="gameGenerated">
+          <a
+            class="btn btn-light text-dark border-secondary"
+            role="button"
+            @click="gameLoaded = true"
+          >
+            {{ $t('randomizer.generate.forward') }}
+            <img class="icon" src="/i/svg/arrow-right.svg" alt />
+          </a>
+        </div>
       </div>
       <div class="card-body">
         <div class="card border-info my-1">
@@ -271,13 +281,6 @@
       </div>
     </div>
 
-    <ins
-      class="adsbygoogle"
-      style="display:inline-block;width:100%;height:90px"
-      data-ad-client="ca-pub-5161309967767506"
-      data-ad-slot="9849787408"
-    ></ins>
-
     <div v-show="generating" class="center">
       <div class="loading" />
       <h1>{{ $t('randomizer.generate.generating') }}</h1>
@@ -285,7 +288,7 @@
 
     <div
       id="seed-details"
-      class="card border-info mt-3"
+      class="card border-success"
       v-if="gameLoaded && romLoaded && !generating"
     >
       <div class="card-header bg-success text-white card-heading-btn">
@@ -312,12 +315,12 @@
       </div>
       <div class="card-body">
         <div class="row">
-          <div class="col-md my-1">
+          <div class="col-md mb-3">
             <vt-rom-info :rom="rom"></vt-rom-info>
           </div>
-          <div class="col-md my-1">
+          <div class="col-md mb-3">
             <div class="row">
-              <div class="col-md-6 my-1">
+              <div class="col-md-6 mb-3">
                 <div class="btn-group btn-flex" role="group" v-if="this.rom">
                   <button
                     class="btn btn-light border-secondary text-center"
@@ -325,17 +328,22 @@
                   >{{ $t('randomizer.details.save_spoiler') }}</button>
                 </div>
               </div>
-              <div class="col-md-6 my-1">
+              <div class="col-md-6 mb-3">
                 <div class="btn-group btn-flex" role="group" v-if="this.rom">
                   <button
                     class="btn btn-success text-center"
+                    :disabled="disableSaveRomButton"
                     @click="saveRom"
                   >{{ $t('randomizer.details.save_rom') }}</button>
                 </div>
               </div>
             </div>
             <div class="row">
-              <vt-rom-settings class="col-12" :rom="rom"></vt-rom-settings>
+              <vt-rom-settings
+                class="col-12"
+                :rom="rom"
+                @disallow-save-rom="disallowSaveRom"
+              ></vt-rom-settings>
             </div>
           </div>
         </div>
@@ -367,8 +375,10 @@ export default {
       romLoaded: false,
       current_rom_hash: "",
       gameLoaded: false,
+      gameGenerated: false,
       show_spoiler: false,
       tournament: false,
+      disableSaveRomButton: false,
       spoilers: "off"
     };
   },
@@ -408,6 +418,9 @@ export default {
       "setEnemyDamage",
       "setEnemyHealth"
     ]),
+    disallowSaveRom(e) {
+      this.disableSaveRomButton = Boolean(e);
+    },
     applyTournamentSeed() {
       this.tournament = true;
       this.spoilers = "off";
@@ -490,13 +503,18 @@ export default {
                     response.data.current_rom_hash &&
                     response.data.current_rom_hash != this.current_rom_hash
                   ) {
-                    // The base rom has been updated.
+                    // The base ROM has been updated.
                     window.location.reload(true);
                   }
-                  if (this.rom.shuffle || this.rom.spoilers == "mystery") {
+                  if (
+                    this.rom.shuffle ||
+                    this.rom.spoilers == "mystery" ||
+                    this.rom.allow_quickswap
+                  ) {
                     this.rom.allowQuickSwap = true;
                   }
                   this.gameLoaded = true;
+                  this.gameGenerated = true;
                   EventBus.$emit("gameLoaded", this.rom);
                   resolve({ rom: this.rom, patch: response.data.patch });
                 }.bind(this)
@@ -522,10 +540,19 @@ export default {
       );
     },
     saveRom() {
+      // track the sprite choice for usage statistics
+      localforage.getItem("rom.sprite-gfx").then(value => {
+        ga("event", "save", {
+          dimension1: value
+        });
+      });
       return this.rom.save(this.rom.downloadFilename() + ".sfc", {
         quickswap: this.quickswap,
         paletteShuffle: this.paletteShuffle,
-        musicOn: this.musicOn
+        musicOn: this.musicOn,
+        msu1Resume: this.msu1Resume,
+        reduceFlashing: this.reduceFlashing,
+        shuffleSfx: this.shuffleSfx
       });
     },
     saveSpoiler() {
@@ -593,7 +620,10 @@ export default {
       heartColor: state => state.heartColor,
       quickswap: state => state.quickswap,
       musicOn: state => state.musicOn,
-      paletteShuffle: state => state.paletteShuffle
+      msu1Resume: state => state.msu1Resume,
+      paletteShuffle: state => state.paletteShuffle,
+      reduceFlashing: state => state.reduceFlashing,
+      shuffleSfx: state => state.shuffleSfx
     }),
     editable() {
       return this.$store.state.randomizer.preset.value === "custom";
@@ -601,9 +631,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.card-body {
-  padding: 0.5rem;
-}
-</style>

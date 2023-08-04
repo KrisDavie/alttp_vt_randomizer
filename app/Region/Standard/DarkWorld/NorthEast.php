@@ -72,7 +72,7 @@ class NorthEast extends Region
     public function initalize()
     {
         $this->shops["Dark World Potion Shop"]->setRequirements(function ($locations, $items) {
-            return ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive())
+            return ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world))
                 || (($items->has('MoonPearl') || ($this->world->config('canOWYBA', false) && $items->hasABottle()))
                     && ($this->world->config('canOneFrameClipOW', false)
                         || ($this->world->config('canBootsClip', false) && $items->has('PegasusBoots'))
@@ -83,17 +83,17 @@ class NorthEast extends Region
         $this->shops["East Dark World Hint"]->setRequirements(function ($locations, $items) {
             return $items->has('MoonPearl')
                 || ($this->world->config('canOWYBA', false) && $items->hasABottle())
-                || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive());
+                || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world));
         });
 
         $this->shops["Palace of Darkness Hint"]->setRequirements(function ($locations, $items) {
             return $items->has('MoonPearl')
                 || ($this->world->config('canOWYBA', false) && $items->hasABottle())
-                || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive());
+                || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world));
         });
 
         $this->locations["Catfish"]->setRequirements(function ($locations, $items) {
-            return (($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive())
+            return (($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world))
                 || $items->has('MoonPearl') || ($this->world->config('canOWYBA', false) && $items->hasABottle()))
                 && ($this->world->config('canOneFrameClipOW', false)
                     || ($this->world->config('canBootsClip', false) && $items->has('PegasusBoots'))
@@ -161,12 +161,12 @@ class NorthEast extends Region
                     || ($items->has('MagicMirror') && $this->world->config('canMirrorClip', false)
                         && $this->world->getRegion('West Death Mountain')->canEnter($locations, $items)
                         && (($this->world->config('canBootsClip', false) && $items->has('PegasusBoots'))
-                            || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive())
+                            || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world))
                             || ($this->world->config('canSuperSpeed', false) && $items->canSpinSpeed())
                             || ($items->has('MoonPearl') && $this->world->config('canFakeFlipper', false))))
                     || $items->has('DefeatAgahnim')
                     || ($items->has('MagicMirror') && $this->world->config('canMirrorWrap', false)
-                        && $this->world->config('canBunnyRevive', false) && $items->canBunnyRevive()
+                        && $this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world)
                         && (($this->world->config('canSuperSpeed', false) && $items->canSpinSpeed())
                             || ($this->world->config('canBootsClip', false) && $items->has('PegasusBoots'))
                             || $this->world->config('canMirrorClip', false))
@@ -177,12 +177,19 @@ class NorthEast extends Region
                         && $items->has('MoonPearl')
                         && ($items->has('Hammer') || $items->has('Flippers')
                             || ($items->has('MagicMirror') && $this->world->config('canMirrorWrap', false) && $items->canLiftRocks())
-                            || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive())
+                            || ($this->world->config('canBunnyRevive', false) && $items->canBunnyRevive($this->world))
                             || ($this->world->config('canWaterWalk', false) && $items->has('PegasusBoots'))
                             || ($this->world->config('canFakeFlipper', false) && !$this->world->config('region.cantTakeDamage', false)))));
         };
 
         $this->prize_location->setRequirements(function ($locations, $items) {
+            if (
+                $this->world->config('goal') == 'ganonhunt'
+                && (!$items->has('TriforcePiece', $this->world->config('item.Goal.Required')))
+            ) {
+                return false;
+            }
+
             if (
                 $this->world->config('goal') == 'dungeons'
                 && (!$items->has('PendantOfCourage')
@@ -214,15 +221,15 @@ class NorthEast extends Region
                 return false;
             }
 
-            return $items->has('MoonPearl')
-                && ($items->has('DefeatAgahnim2') || $this->world->config('goal') === 'fast_ganon')
+            return ($items->has('MoonPearl') || ($this->world->config('canOWYBA', false) && $items->hasABottle()))
+                && ($items->has('DefeatAgahnim2') || in_array($this->world->config('goal'), ['fast_ganon', 'ganonhunt']))
                 && (!$this->world->config('region.requireBetterBow', false) || $items->canShootArrows($this->world, 2))
                 && (
                     ($this->world->config('mode.weapons') == 'swordless' && $items->has('Hammer')
                         && ($items->has('Lamp', $this->world->config('item.require.Lamp', 1)) || (
-                            $items->has('FireRod') && $items->canExtendMagic(1))))
-                    || (!$this->world->config('region.requireBetterSword', false) && ($items->hasSword(2) && ($items->has('Lamp', $this->world->config('item.require.Lamp', 1)) || ($items->has('FireRod') && $items->canExtendMagic(3)))))
-                    || ($items->hasSword(3) && ($items->has('Lamp', $this->world->config('item.require.Lamp', 1)) || ($items->has('FireRod') && $items->canExtendMagic(2)))));
+                            $items->has('FireRod') && $items->canExtendMagic($this->world, 1))))
+                    || (!$this->world->config('region.requireBetterSword', false) && ($items->hasSword(2) && ($items->has('Lamp', $this->world->config('item.require.Lamp', 1)) || ($items->has('FireRod') && $items->canExtendMagic($this->world, 3)))))
+                    || ($items->hasSword(3) && ($items->has('Lamp', $this->world->config('item.require.Lamp', 1)) || ($items->has('FireRod') && $items->canExtendMagic($this->world, 2)))));
         });
 
         return $this;

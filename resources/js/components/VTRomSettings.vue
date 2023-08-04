@@ -19,7 +19,18 @@
           :rom="rom"
           storage-key="rom.sprite-gfx"
           :title="$t('rom.settings.play_as')"
+          @load-custom-sprite="loadCustomSprite"
         ></vt-sprite-select>
+      </div>
+    </div>
+    <div v-if="showLoadCustomSprite" class="row mb-3">
+      <div class="col-md-12">
+        <vt-sprite-loader
+          id="sprite-loader"
+          :rom="rom"
+          storage-key="rom.custom-sprite-gfx"
+          @disallow-save-rom="disallowSaveRom"
+        ></vt-sprite-loader>
       </div>
     </div>
     <div v-if="!rom.tournament" class="row mb-3">
@@ -47,23 +58,45 @@
       </div>
     </div>
     <div v-if="!rom.music" class="row mb-3">
-      <div class="col-md-12">
+      <div class="col">
         <Toggle :value="musicOn" @input="setMusicOn">{{ $t('rom.settings.music') }}</Toggle>
       </div>
-    </div>
-    <div v-if="!rom.tournament || rom.allowQuickSwap" class="row mb-3">
-      <div class="col-md-12">
-        <Toggle :value="quickswap" @input="setQuickswap">{{ $t('rom.settings.quickswap') }}</Toggle>
+      <div v-if="rom.build >= '2021-05-04'" class="col">
+        <Toggle :value="msu1Resume" @input="setMSU1Resume">{{ $t('rom.settings.msu1resume') }}</Toggle>
       </div>
     </div>
-    <div v-if="!rom.special" class="row mb-3">
-      <div class="col-md-12">
+    <div class="row mb-3">
+      <div v-if="!rom.tournament || rom.allowQuickSwap" class="col">
+        <Toggle :value="quickswap" @input="setQuickswap">{{ $t('rom.settings.quickswap') }}</Toggle>
+      </div>
+      <div v-if="rom.build >= '2021-05-04'" class="col">
+        <Toggle
+          :value="reduceFlashing"
+          @input="setReduceFlashing"
+        >{{ $t('rom.settings.reduce_flashing') }}
+        <sup
+          v-if="reduceFlashing"
+        >*</sup></Toggle>
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div v-if="!rom.special" class="col">
         <Toggle
           :value="paletteShuffle"
           @input="setPaletteShuffle"
         >{{ $t('rom.settings.palette_shuffle') }}</Toggle>
       </div>
+      <div v-if="!rom.music || rom.build >= '2021-12-21'" class="col">
+        <Toggle :value="shuffleSfx" @input="setShuffleSfx">{{ $t('rom.settings.shuffle_sfx') }}</Toggle>
+      </div>
     </div>
+    <div class="row mb-3">
+    </div>
+    <div
+      v-if="reduceFlashing && rom.build >= '2021-05-04'"
+      class="logic-warning text-info"
+      v-html="'* ' + $t('rom.settings.reduce_flashing_warning')"
+    />
   </div>
 </template>
 
@@ -78,6 +111,7 @@ export default {
   props: ["rom"],
   data() {
     return {
+      showLoadCustomSprite: false,
       settings: {
         heartSpeeds: [
           { value: "off", name: this.$i18n.t("rom.settings.heart_speeds.off") },
@@ -122,11 +156,18 @@ export default {
             value: "green",
             name: this.$i18n.t("rom.settings.heart_colors.green")
           },
-          { value: "red", name: this.$i18n.t("rom.settings.heart_colors.red") },
+          {
+            value: "red",
+            name: this.$i18n.t("rom.settings.heart_colors.red")
+          },
           {
             value: "yellow",
             name: this.$i18n.t("rom.settings.heart_colors.yellow")
-          }
+          },
+          {
+            value: "random",
+            name: this.$i18n.t("rom.settings.heart_colors.random")
+          },
         ]
       },
       defaults: {
@@ -148,13 +189,23 @@ export default {
     };
   },
   methods: {
+    loadCustomSprite(e) {
+      this.showLoadCustomSprite = Boolean(e);
+      this.$emit('disallow-save-rom', Boolean(e));
+    },
+    disallowSaveRom(e) {
+      this.$emit('disallow-save-rom', Boolean(e));
+    },
     ...mapMutations("romSettings", [
       "setHeartSpeed",
       "setMenuSpeed",
       "setHeartColor",
       "setQuickswap",
       "setMusicOn",
-      "setPaletteShuffle"
+      "setMSU1Resume",
+      "setPaletteShuffle",
+      "setReduceFlashing",
+      "setShuffleSfx",
     ])
   },
   computed: {
@@ -167,7 +218,10 @@ export default {
       heartColor: state => state.heartColor,
       quickswap: state => state.quickswap,
       musicOn: state => state.musicOn,
-      paletteShuffle: state => state.paletteShuffle
+      msu1Resume: state => state.msu1Resume,
+      paletteShuffle: state => state.paletteShuffle,
+      reduceFlashing: state => state.reduceFlashing,
+      shuffleSfx: state => state.shuffleSfx
     })
   }
 };

@@ -54,8 +54,9 @@ class Distribution extends Command
         $logic = [
             'none' => 'NoGlitches',
             'overworld_glitches' => 'OverworldGlitches',
+            'hybrid_major_glitches' => 'HybridMajorGlitches',
             'major_glitches' => 'MajorGlitches',
-            'no_logic' => 'None',
+            'no_logic' => 'NoLogic',
         ][$this->option('glitches')];
 
         $this->state = $this->option('state');
@@ -77,6 +78,7 @@ class Distribution extends Command
             'enemizer.enemyShuffle' => 'none',
             'enemizer.enemyDamage' => 'default',
             'enemizer.enemyHealth' => 'default',
+            'enemizer.potShuffle' => 'off',
         ];
 
         $locations = [];
@@ -134,13 +136,13 @@ class Distribution extends Command
                 return 4;
         }
 
-        $iterations = $this->argument('iterations');
+        $iterations = min((int) $this->argument('iterations'), 1);
 
         if ($this->option('verbose') && is_numeric($iterations)) {
-            $bar = $this->output->createProgressBar((int) $iterations);
+            $bar = $this->output->createProgressBar($iterations);
         }
 
-        for ($i = 0; $i < $this->argument('iterations'); $i++) {
+        for ($i = 0; $i < $iterations; $i++) {
             Item::clearCache();
             Boss::clearCache();
             if (!is_callable($function)) {

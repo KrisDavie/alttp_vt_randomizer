@@ -11,6 +11,7 @@ return [
             'crosskeys' => 'Clésordre et Entrées',
             'quick' => 'Super Rapide',
             'nightmare' => 'Cauchemars',
+            'tournament' => 'Tournoi',
             'custom' => 'Personnalisé',
         ],
     ],
@@ -46,6 +47,7 @@ return [
         'options' => [
             'none' => 'Aucun',
             'overworld_glitches' => 'Glitchs Monde Extérieur',
+            'hybrid_major_glitches' => 'Glitchs Majeurs Hybrides',
             'major_glitches' => 'Glitchs Majeurs',
             'no_logic' => 'Sans Logique',
         ],
@@ -59,6 +61,7 @@ return [
             'dungeons' => 'Tous les Donjons',
             'pedestal' => 'Piédestal de la Master Sword',
             'triforce-hunt' => 'Morceaux de Triforce ',
+            'ganonhunt' => 'Ganonhunt',
         ],
     ],
     'tower_open' => [
@@ -102,7 +105,7 @@ return [
         ],
     ],
     "entrance_shuffle" => [
-        'title' => 'Mélangeur d\'Entrées',
+        'title' => 'Mélangeur d’Entrées',
         'options' => [
             'none' => 'Désactivé',
             'simple' => 'Simple',
@@ -122,7 +125,7 @@ return [
         ],
     ],
     "enemy_shuffle" => [
-        'title' => 'Mélangeur d\'Ennemis',
+        'title' => 'Mélangeur d’Ennemis',
         'options' => [
             'none' => 'Désactivé',
             'shuffled' => 'Intervertis',
@@ -154,7 +157,7 @@ return [
             'expert' => 'Expert',
             'crowd_control' => 'Crowd Control',
         ],
-        'crowd_control_warning' => '<sup>*</sup> Ce paramètre est prévu pour être utilisé avec l\'extension Twitch Crowd Control. En savoir plus: <a href="https://crowdcontrol.live/" target="_blank" rel=”noopener noreferrer”>https://crowdcontrol.live/</a>',
+        'crowd_control_warning' => '<sup>*</sup> Ce paramètre est prévu pour être utilisé avec l’extension Twitch Crowd Control. En savoir plus: <a href="https://crowdcontrol.live/" target="_blank" rel=”noopener noreferrer”>https://crowdcontrol.live/</a>',
     ],
     'item_functionality' => [
         'title' => 'Fonctionnalité des Objets',
@@ -194,7 +197,9 @@ return [
         'race' => 'Générer une ROM de Course',
         'race_warning' => 'Les spoilers ne seront <span class="running-now">jamais</span> disponibles pour cette option.',
         'spoiler_race' => 'Générer une ROM avec Spoiler',
+        'casual' => 'Générer une ROM',
         'back' => 'Changer les Paramètres',
+        'forward' => 'Voir le jeu généré',
         'regenerate' => 'Générer à nouveau',
         'regenerate_tooltip' => 'Générer à nouveau avec les mêmes paramètres',
         'generating' => 'Génération...',
@@ -204,7 +209,7 @@ return [
         'save_spoiler' => 'Enregistrer la spoiler',
         'save_rom' => 'Sauvegarder la ROM',
     ],
-    // depricated
+    // deprecated
     'variation' => [
         'title' => 'Variation',
     ],

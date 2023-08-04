@@ -71,7 +71,7 @@ great meal. >
 on pizza is a
 great choice.
 -
-> race roms
+> race ROMs
 don’t have
 spoiler logs
 -
@@ -139,4 +139,8 @@ ALTTPR.    >
 Other randos
 exist too!
 Try some!  >
+-
+The hobo's
+fire sheds
+no light.  >
 -
