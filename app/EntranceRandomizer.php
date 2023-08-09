@@ -37,6 +37,66 @@ class EntranceRandomizer implements RandomizerContract
 		'swordless' => 'swordless',
 	];
 
+	/** @var array */
+	private $dungeon_lookup = [
+		'Escape' => 'H2',
+		'Hyrule Castle' => 'H2',
+		'Eastern Palace' => 'P1',
+		'Desert Palace' => 'P2',
+		'Tower of Hera' => 'P3',
+		'Agahnims Tower' => 'A1',
+		'Palace of Darkness' => 'D1',
+		'Swamp Palace' => 'D2',
+		'Skull Woods' => 'D3',
+		'Thieves Town' => 'D4',
+		'Ice Palace' => 'D5',
+		'Misery Mire' => 'D6',
+		'Turtle Rock' => 'D7',
+		'Ganons Tower' => 'A2',
+	];
+
+	/** @var array */
+	private $number_lookup = [
+		'20' => 'Twenty',
+		'10' => 'Ten',
+		'1' => 'One',
+		'300' => 'ThreeHundred',
+		'3' => 'Three',
+		'100' => 'OneHundred',
+		'50' => 'Fifty',
+		'5' => 'Five',
+		'1/2' => 'Half',
+	];
+
+	/** @var array */
+	private $bottle_lookup = [
+		'Bottle (Green Potion)' => 'BottleWithGreenPotion',
+		'Bottle (Blue Potion)' => 'BottleWithBluePotion',
+		'Bottle (Red Potion)' => 'BottleWithRedPotion',
+		'Bottle (Fairy)' => 'BottleWithFairy',
+		'Bottle (Bee)' => 'BottleWithBee',
+		'Bottle (Good Bee)' => 'BottleWithGoldBee',
+	];
+
+	/** @var array */
+	private $pendant_lookup = [
+		'Green Pendant' => 'PendantOfCourage',
+		'Red Pendant' => 'PendantOfWisdom',
+		'Blue Pendant' => 'PendantOfPower',
+	];
+
+	/** @var array */
+	private $location_renames = [
+		'Bumper Cave Ledge' => 'Bumper Cave',
+		'Graveyard Cave' => 'Graveyard Ledge',
+		'Mini Moldorm Cave - Generous Guy' => 'Mini Moldorm Cave - NPC',
+		'Hype Cave - Generous Guy' => 'Hype Cave - NPC',
+		'Bonk Rock Cave' => 'Pegasus Rocks',
+		'Peg Cave' => 'Hammer Pegs',
+		'Hyrule Castle - Zelda\'s Chest' => 'Hyrule Castle - Zelda\'s Cell',
+		'Ganon\'s Tower - Validation Chest' => 'Ganon\'s Tower - Moldorm Chest',
+
+	];
 	/**
 	 * Create a new Entrance Randomizer. This currently only works with one
 	 * world. So we use the first of the array passed in.
@@ -100,37 +160,43 @@ class EntranceRandomizer implements RandomizerContract
 			$flags[] = '--hint';
 		}
 
-		$proc = new Process(array_merge(
-			[
-				'python3.9',
-				base_path('vendor/z3/entrancerandomizer/EntranceRandomizer.py'),
-				'--mode',
-				$mode,
-				'--logic',
-				$logic,
-				'--accessibility',
-				$this->world->config('accessibility'),
-				'--swords',
-				$this->swords_lookup[$this->world->config('mode.weapons')],
-				'--goal',
-				$this->goal_lookup[$this->world->config('goal')],
-				'--difficulty',
-				$this->world->config('item.pool'),
-				'--item_functionality',
-				$this->world->config('item.functionality'),
-				'--shuffle',
-				$this->world->config('entrances'),
-				'--crystals_ganon',
-				$this->world->config('crystals.ganon'),
-				'--crystals_gt',
-				$this->world->config('crystals.tower'),
-				'--securerandom',
-				'--jsonout',
-				'--loglevel',
-				'error',
-			],
-			$flags
-		));
+		if ($this->world->config('meta.noRom')) {
+			$flags[] = '--suppress_rom';
+		}
+
+		$proc = new Process(
+			array_merge(
+				[
+					'python3.9',
+					base_path('vendor/z3/entrancerandomizer/EntranceRandomizer.py'),
+					'--mode',
+					$mode,
+					'--logic',
+					$logic,
+					'--accessibility',
+					$this->world->config('accessibility'),
+					'--swords',
+					$this->swords_lookup[$this->world->config('mode.weapons')],
+					'--goal',
+					$this->goal_lookup[$this->world->config('goal')],
+					'--difficulty',
+					$this->world->config('item.pool'),
+					'--item_functionality',
+					$this->world->config('item.functionality'),
+					'--shuffle',
+					$this->world->config('entrances'),
+					'--crystals_ganon',
+					$this->world->config('crystals.ganon'),
+					'--crystals_gt',
+					$this->world->config('crystals.tower'),
+					'--securerandom',
+					'--jsonout',
+					'--loglevel',
+					'error',
+				],
+				$flags
+			)
+		);
 
 		Log::debug($proc->getCommandLine());
 		$proc->run();
@@ -138,15 +204,101 @@ class EntranceRandomizer implements RandomizerContract
 		if (!$proc->isSuccessful()) {
 			Log::error($proc->getOutput());
 			Log::error($proc->getErrorOutput());
-			throw new \Exception("Unable to generate");
+			print_r('Failed to generate ER');
+			print_r($proc->getOutput());
+			// create a new  array 
+			$emptyArray = [];
+			// add error key to array
+			$emptyArray['error'] = $proc->getErrorOutput();
+			//  set spoiler to empty array
+			$this->world->setSpoiler($emptyArray);
+			return;
 		}
 
 		$er = json_decode($proc->getOutput());
-		$patch = $er->patch;
-		array_walk($patch, function (&$write, $address) {
-			$write = [$address => $write];
-		});
-		$this->world->setOverridePatch(array_values((array) $patch));
+		// print_r($er);
+
+		// loop over keys in er, skip 'Entrances', 'Special' and 'meta'
+		foreach (json_decode($er->spoiler, true) as $key => $value) {
+			if ($key === 'Entrances' || $key === 'Special' || $key === 'Shops' || $key === 'meta' || $key === 'playthrough' || $key === 'paths') {
+				continue;
+			}
+			// loop over locations in er[$key]
+			// print_r($value);
+			foreach ($value as $location => $item) {
+				if ($item === 'Beat Agahnim 2') {
+					continue;
+				}
+				if (strpos($location, 'Ganons') !== false) {
+					// replace Ganons -> Ganon's
+					$location = str_replace('Ganons', 'Ganon\'s', $location);
+				}
+				// Check if location is in rename array
+				if (array_key_exists($location, $this->location_renames)) {
+					$location = $this->location_renames[$location];
+				}
+				// If this item name contains Big Key, Small Key, Compass or Map, rename to match our convention
+				// We need to extract the dungeon name from the brackets first and map it to our convention
+				// Then we can replace the item name with the new name
+				if (strpos($item, 'Big Key') !== false) {
+					$dungeon = substr($item, strpos($item, '(') + 1, -1);
+					$dungeon = $this->dungeon_lookup[$dungeon];
+					$item = 'BigKey' . $dungeon;
+				} elseif (strpos($item, 'Key') !== false) {
+					$dungeon = substr($item, strpos($item, '(') + 1, -1);
+					$dungeon = $this->dungeon_lookup[$dungeon];
+					$item = 'Key' . $dungeon;
+				} elseif (strpos($item, 'Compass') !== false) {
+					$dungeon = substr($item, strpos($item, '(') + 1, -1);
+					$dungeon = $this->dungeon_lookup[$dungeon];
+					$item = 'Map' . $dungeon;
+				} elseif (strpos($item, 'Map') !== false) {
+					$dungeon = substr($item, strpos($item, '(') + 1, -1);
+					$dungeon = $this->dungeon_lookup[$dungeon];
+					$item = 'Map' . $dungeon;
+				} elseif (strpos($item, 'Bottle ') !== false) {
+					$item = $this->bottle_lookup[$item];
+				} elseif (strpos($item, 'Pendant') !== false) {
+					$item = $this->pendant_lookup[$item];
+				} elseif (strpos($item, 'Single') !== false) {
+					$item = str_replace('Single ', '', $item);
+				} elseif (strpos($item, 'Magic Upgrade (1/2)') !== false) {
+					$item = 'HalfMagic';
+				} elseif (strpos($item, '(') !== false) {
+					$number = substr($item, strpos($item, '(') + 1, -1);
+					$item = substr($item, 0, strpos($item, ' ('));
+					$item = $this->number_lookup[$number] . $item;
+				} elseif (strpos($item, 'Sanctuary') !== false) {
+					$item = str_replace('Sanctuary ', '', $item);
+				} elseif (strpos($item, 'Blue ') !== false) {
+					$item = str_replace('Blue ', '', $item);
+				} elseif (strpos($item, 'Powder') !== false) {
+					$item = str_replace('Magic ', '', $item);
+				} elseif (strpos($item, 'Ocarina') !== false) {
+					$item = $item . 'Inactive';
+				}
+				// capitalise each word
+				$item = ucwords($item);
+				// remove all spaces
+				$item = str_replace(' ', '', $item);
+				// try to get location, continue if error raised
+				try {
+					$loc = $this->world->getLocation($location);
+				} catch (\Exception $e) {
+					continue;
+				}
+				// set item in location
+				$loc->setItem(Item::get($item, $this->world));
+			}
+		}
+
+		if (!$this->world->config('meta.noRom')) {
+			$patch = $er->patch;
+			array_walk($patch, function (&$write, $address) {
+				$write = [$address => $write];
+			});
+			$this->world->setOverridePatch(array_values((array) $patch));
+		}
 
 		// possible temp fix
 		$spoiler = json_decode($er->spoiler, true);

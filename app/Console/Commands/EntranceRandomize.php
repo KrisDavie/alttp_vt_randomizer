@@ -4,7 +4,7 @@ namespace ALttP\Console\Commands;
 
 use ALttP\Boss;
 use ALttP\Item;
-use ALttP\Randomizer;
+use ALttP\EntranceRandomizer;
 use ALttP\Rom;
 use ALttP\Support\Zspr;
 use ALttP\World;
@@ -14,16 +14,16 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Run randomizer as command.
+ * Run entrance randomizer as command.
  */
-class Randomize extends Command
+class EntranceRandomize extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'alttp:randomize {input_file : base ROM to randomize}'
+    protected $signature = 'alttp:entrandomize {input_file : base ROM to randomize}'
         . ' {output_directory : where to place randomized ROM}'
         . ' {--unrandomized : do not apply randomization to the ROM}'
         . ' {--spoiler : generate a spoiler file}'
@@ -48,6 +48,8 @@ class Randomize extends Command
         . ' {--hints=on : set hints on or off}'
         . ' {--item_pool=normal : set item pool}'
         . ' {--item_functionality=normal : set item functionality}'
+        . ' {--boss_shuffle=none : set boss shuffle mode}'
+        . ' {--entrances=none : type of entrance shuffle}'
         . ' {--write-db-seed-data : write tons of info about the seed to postgres}'
         . ' {--quickswap=false : set quickswap}';
 
@@ -56,22 +58,23 @@ class Randomize extends Command
      *
      * @var string
      */
-    protected $description = 'Generate a randomized ROM.';
+    protected $description = 'Generate an entrance randomized ROM.';
 
     /** @var array */
     protected $reset_patch;
 
 
 
-    private function get_db_names($db, $tablename): array {
+    private function get_db_names($db, $tablename): array
+    {
         $ret = [];
-        $db_names = $db->select('select name,id from ' . $tablename);        
+        $db_names = $db->select('select name,id from ' . $tablename);
         foreach ($db_names as $val) {
-            $ret[$val->name] = $val->id;    
+            $ret[$val->name] = $val->id;
         }
         return $ret;
     }
-    
+
     /**
      * Execute the console command.
      *
@@ -79,6 +82,7 @@ class Randomize extends Command
      */
     public function handle()
     {
+
         ini_set('memory_limit', '512M');
         $hasher = new Hashids('local', 15);
 
@@ -88,11 +92,13 @@ class Randomize extends Command
             || !is_string($this->option('state'))
             || !is_string($this->option('weapons'))
             || !is_string($this->option('menu-speed'))
+            // TODO: Add extra options
         ) {
             $this->error('option not string');
 
             return 101;
         }
+
 
         $filename = vsprintf('%s/alttpr_%s_%s_%s_%%s.%%s', [
             $this->argument('output_directory'),
@@ -123,16 +129,17 @@ class Randomize extends Command
 
         //hyphen stats project
         $known_hashes = [];
-        if($this->option('write-db-seed-data')) {
+        if ($this->option('write-db-seed-data')) {
             $db = DB::connection('pgsql');
             $known_location_names = $this->get_db_names($db, 'locations');
-            $known_item_names = $this->get_db_names($db, 'items');        
-            $db_hashes = $db->select('select hash from seeds');        
+            $known_item_names = $this->get_db_names($db, 'items');
+            $db_hashes = $db->select('select hash from seeds');
             foreach ($db_hashes as $val) {
                 $known_hashes[$val->hash] = true;
-            } 
+            }
         }
         //print_r($known_hashes);
+
 
         $bulk = (int) ($this->option('bulk') ?? 1);
         for ($i = 0; $i < $bulk; $i++) {
@@ -140,12 +147,12 @@ class Randomize extends Command
             Boss::clearCache();
             $rom = new Rom($this->argument('input_file'));
             $hash = $hasher->encode((int) (microtime(true) * 1000));
-            
+
             if (array_key_exists($hash, $known_hashes)) {
                 $this->info("Skipping duplicate hash " . $hash);
                 continue;
             }
-            
+
             if (!$this->option('skip-md5') && !$rom->checkMD5()) {
                 $rom->resize();
 
@@ -157,11 +164,12 @@ class Randomize extends Command
                 return 3;
             }
 
+
             if (is_string($this->option('heartcolor'))) {
                 $heartColorToUse = $this->option('heartcolor');
                 if ($heartColorToUse === 'random') {
-                  $colorOptions = ['blue', 'green', 'yellow', 'red'];
-                  $heartColorToUse = $colorOptions[get_random_int(0, 3)];
+                    $colorOptions = ['blue', 'green', 'yellow', 'red'];
+                    $heartColorToUse = $colorOptions[get_random_int(0, 3)];
                 }
                 $rom->setHeartColors($heartColorToUse);
             }
@@ -170,7 +178,7 @@ class Randomize extends Command
                 $rom->setHeartBeepSpeed($this->option('heartbeep'));
             }
 
-            if(is_string($this->option('quickswap'))) {
+            if (is_string($this->option('quickswap'))) {
                 $rom->setQuickSwap(strtolower($this->option('quickswap')) === 'true');
             }
 
@@ -202,30 +210,37 @@ class Randomize extends Command
                 'goal' => $this->option('goal'),
                 'crystals.ganon' => $crystals_ganon,
                 'crystals.tower' => $crystals_tower,
-                'entrances' => 'none',
+                'entrances' => $this->option('entrances'),
                 'mode.weapons' => $this->option('weapons'),
                 'tournament' => $this->option('tournament'),
                 'spoil.Hints' => $this->option('hints'),
                 'logic' => $logic,
                 'item.pool' => $this->option('item_pool'),
                 'item.functionality' => $this->option('item_functionality'),
-                'enemizer.bossShuffle' => 'none',
+                'enemizer.bossShuffle' => $this->option('boss_shuffle'),
                 'enemizer.enemyShuffle' => 'none',
                 'enemizer.enemyDamage' => 'default',
                 'enemizer.enemyHealth' => 'default',
                 'enemizer.potShuffle' => 'off',
+                'meta.noRom' => $this->option('no-rom'),
             ]);
 
-            $rand = new Randomizer([$world]);
-            $rand->randomize();            
+            $rand = new EntranceRandomizer([$world]);
+            $rand->randomize();
+
+            // is 'error' in the spoiler log keys
+            if (array_key_exists('error', $world->getSpoiler())) {
+                print_r('Batch error on batch' . $i . "\n");
+                continue;
+            }
 
             if (!($this->option('no-rom') ?? false)) {
                 $world->writeToRom($rom);
                 $rom->muteMusic((bool) $this->option('no-music') ?? false);
                 $rom->setMenuSpeed($this->option('menu-speed'));
-    
+
                 $output_file = sprintf($filename, $hash, 'sfc');
-                
+
                 if ($this->option('sprite') && is_string($this->option('sprite')) && is_readable($this->option('sprite'))) {
                     $this->info("sprite");
                     try {
@@ -258,10 +273,10 @@ class Randomize extends Command
                 file_put_contents($spoiler_file, json_encode($world->getSpoiler(), JSON_PRETTY_PRINT));
                 $this->info(sprintf('Spoiler Saved: %s', $spoiler_file));
             }
-            
+
             //hyphen stats project
-            if($this->option('write-db-seed-data')) {
-                if(array_key_exists($hash, $known_hashes)) {
+            if ($this->option('write-db-seed-data')) {
+                if (array_key_exists($hash, $known_hashes)) {
                     $this->info("Skipping duplicate hash " . $hash);
                     continue;
                 }
@@ -275,8 +290,8 @@ class Randomize extends Command
                     $db->commit();
                 }
             }
-            
-            
+
+
         }
     }
 
