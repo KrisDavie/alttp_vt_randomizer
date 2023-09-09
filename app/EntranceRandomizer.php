@@ -10,8 +10,7 @@ use Symfony\Component\Process\Process;
  * Main class for randomization. All the magic happens here. We use mt_rand as it is much faster than rand. Not all PHP
  * functions support mt_rand (e.g. array_shuffle), so those had to be cloned to maintain seed integrity.
  */
-class EntranceRandomizer implements RandomizerContract
-{
+class EntranceRandomizer implements RandomizerContract {
 	const LOGIC = -1;
 	const VERSION = '31.1';
 	protected $world;
@@ -28,6 +27,8 @@ class EntranceRandomizer implements RandomizerContract
 		'dungeons' => 'dungeons',
 		'pedestal' => 'pedestal',
 		'triforce-hunt' => 'triforcehunt',
+		'ganonhunt' => 'ganonhunt',
+		'completionist' => 'completionist',
 	];
 	/** @var array */
 	private $swords_lookup = [
@@ -105,8 +106,7 @@ class EntranceRandomizer implements RandomizerContract
 	 *
 	 * @return void
 	 */
-	public function __construct(array $worlds)
-	{
+	public function __construct(array $worlds) {
 		$this->world = reset($worlds);
 
 		if (!$this->world instanceof World) {
@@ -121,8 +121,7 @@ class EntranceRandomizer implements RandomizerContract
 	 *
 	 * @return void
 	 */
-	public function randomize(): void
-	{
+	public function randomize(): void {
 		$flags = [];
 		if ($this->world->config('dungeonItems') === 'full') {
 			$flags[] = '--keysanity';
@@ -131,7 +130,8 @@ class EntranceRandomizer implements RandomizerContract
 		$mode = 'standard';
 		if ($this->world instanceof World\Open) {
 			$mode = 'open';
-		} elseif ($this->world instanceof World\Inverted) {
+		}
+		elseif ($this->world instanceof World\Inverted) {
 			$mode = 'inverted';
 		}
 		if ($this->world instanceof World\Retro) {
@@ -164,38 +164,45 @@ class EntranceRandomizer implements RandomizerContract
 			$flags[] = '--suppress_rom';
 		}
 
-		$proc = new Process(
-			array_merge(
-				[
-					'python3.9',
-					base_path('vendor/z3/entrancerandomizer/EntranceRandomizer.py'),
-					'--mode',
-					$mode,
-					'--logic',
-					$logic,
-					'--accessibility',
-					$this->world->config('accessibility'),
-					'--swords',
-					$this->swords_lookup[$this->world->config('mode.weapons')],
-					'--goal',
-					$this->goal_lookup[$this->world->config('goal')],
-					'--difficulty',
-					$this->world->config('item.pool'),
-					'--item_functionality',
-					$this->world->config('item.functionality'),
-					'--shuffle',
-					$this->world->config('entrances'),
-					'--crystals_ganon',
-					$this->world->config('crystals.ganon'),
-					'--crystals_gt',
-					$this->world->config('crystals.tower'),
-					'--securerandom',
-					'--jsonout',
-					'--loglevel',
-					'error',
-				],
-				$flags
-			)
+		if ($this->world->config('rom.hudItemCounter') === true) {
+			$flags[] = '--huditemcounter';
+		}
+
+		if ($this->world->config('fastrom', true) === false) {
+			$flags[] = '--nofastrom';
+		}
+
+		$proc = new Process(array_merge(
+			[
+				'python3.9',
+				base_path('vendor/z3/entrancerandomizer/EntranceRandomizer.py'),
+				'--mode',
+				$mode,
+				'--logic',
+				$logic,
+				'--accessibility',
+				$this->world->config('accessibility'),
+				'--swords',
+				$this->swords_lookup[$this->world->config('mode.weapons')],
+				'--goal',
+				$this->goal_lookup[$this->world->config('goal')],
+				'--difficulty',
+				$this->world->config('item.pool'),
+				'--item_functionality',
+				$this->world->config('item.functionality'),
+				'--shuffle',
+				$this->world->config('entrances'),
+				'--crystals_ganon',
+				$this->world->config('crystals.ganon'),
+				'--crystals_gt',
+				$this->world->config('crystals.tower'),
+				'--securerandom',
+				'--jsonout',
+				'--loglevel',
+				'error',
+			],
+			$flags
+		)
 		);
 
 		Log::debug($proc->getCommandLine());
@@ -244,37 +251,49 @@ class EntranceRandomizer implements RandomizerContract
 					$dungeon = substr($item, strpos($item, '(') + 1, -1);
 					$dungeon = $this->dungeon_lookup[$dungeon];
 					$item = 'BigKey' . $dungeon;
-				} elseif (strpos($item, 'Key') !== false) {
+				}
+				elseif (strpos($item, 'Key') !== false) {
 					$dungeon = substr($item, strpos($item, '(') + 1, -1);
 					$dungeon = $this->dungeon_lookup[$dungeon];
 					$item = 'Key' . $dungeon;
-				} elseif (strpos($item, 'Compass') !== false) {
+				}
+				elseif (strpos($item, 'Compass') !== false) {
 					$dungeon = substr($item, strpos($item, '(') + 1, -1);
 					$dungeon = $this->dungeon_lookup[$dungeon];
 					$item = 'Map' . $dungeon;
-				} elseif (strpos($item, 'Map') !== false) {
+				}
+				elseif (strpos($item, 'Map') !== false) {
 					$dungeon = substr($item, strpos($item, '(') + 1, -1);
 					$dungeon = $this->dungeon_lookup[$dungeon];
 					$item = 'Map' . $dungeon;
-				} elseif (strpos($item, 'Bottle ') !== false) {
+				}
+				elseif (strpos($item, 'Bottle ') !== false) {
 					$item = $this->bottle_lookup[$item];
-				} elseif (strpos($item, 'Pendant') !== false) {
+				}
+				elseif (strpos($item, 'Pendant') !== false) {
 					$item = $this->pendant_lookup[$item];
-				} elseif (strpos($item, 'Single') !== false) {
+				}
+				elseif (strpos($item, 'Single') !== false) {
 					$item = str_replace('Single ', '', $item);
-				} elseif (strpos($item, 'Magic Upgrade (1/2)') !== false) {
+				}
+				elseif (strpos($item, 'Magic Upgrade (1/2)') !== false) {
 					$item = 'HalfMagic';
-				} elseif (strpos($item, '(') !== false) {
+				}
+				elseif (strpos($item, '(') !== false) {
 					$number = substr($item, strpos($item, '(') + 1, -1);
 					$item = substr($item, 0, strpos($item, ' ('));
 					$item = $this->number_lookup[$number] . $item;
-				} elseif (strpos($item, 'Sanctuary') !== false) {
+				}
+				elseif (strpos($item, 'Sanctuary') !== false) {
 					$item = str_replace('Sanctuary ', '', $item);
-				} elseif (strpos($item, 'Blue ') !== false) {
+				}
+				elseif (strpos($item, 'Blue ') !== false) {
 					$item = str_replace('Blue ', '', $item);
-				} elseif (strpos($item, 'Powder') !== false) {
+				}
+				elseif (strpos($item, 'Powder') !== false) {
 					$item = str_replace('Magic ', '', $item);
-				} elseif (strpos($item, 'Ocarina') !== false) {
+				}
+				elseif (strpos($item, 'Ocarina') !== false) {
 					$item = $item . 'Inactive';
 				}
 				// capitalise each word
@@ -284,7 +303,8 @@ class EntranceRandomizer implements RandomizerContract
 				// try to get location, continue if error raised
 				try {
 					$loc = $this->world->getLocation($location);
-				} catch (\Exception $e) {
+				}
+				catch (\Exception $e) {
 					continue;
 				}
 				// set item in location
@@ -329,8 +349,7 @@ class EntranceRandomizer implements RandomizerContract
 	 *
 	 * @return array
 	 */
-	public function getWorlds(): array
-	{
+	public function getWorlds(): array {
 		return [$this->world];
 	}
 }
