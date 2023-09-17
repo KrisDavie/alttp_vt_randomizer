@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
 COPY . /app
 WORKDIR /app
 RUN composer install
+RUN composer require phpunit/phpunit ^9.0
 # COPY . /app
 
 # set SQLite database environment variables
