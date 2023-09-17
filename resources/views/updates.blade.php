@@ -1,6 +1,23 @@
 @extends('layouts.default', ['title' => 'Updates - '])
 
 @section('content')
+    <h2>v31.2.1 (September 2023)</h2>
+    <div class="card card-body bg-light mb-3">
+        <li>Bug Fixes</li>
+        <ul>
+            <li>A pre-activated flute in a freestanding location will now appropriately appear as the flute.</li>
+            <li>Miscellaneous updates to the capitalization of hints.</li>
+            <li>Fixes a conflict that could occur in the HUD if Triforce Hunt and Completionist were enabled at the same time.</li>
+            <li>Completionist goal will now always force 100% Locations for the item accessbility.</li>
+            <li>Fixed a bow tracking issue that prevented silver arrows to be used on Ganon when choosing Expert item functionality.</li>
+            <li>Fixed the palette on GT Torch and Hera cage items.</li>
+            <li>Ganon will now properly hint to the player where the silvers are at.</li>
+            <li>Keys now have their appropriate color when they are freestanding in a dungeon.</li>
+            <li>Entrance Randomizer: Ganon signpost now properly tells the player the required number of crystals to defeat him.</li>
+            <li>The HUD will properly update when you run out of bombs.</li>
+            <li>Stumpy was going bankrupt giving his item every time the player asked.  He has been advised that he only needs to give the player his item once per game.</li>
+        </ul>
+    </div> 
 
     <h2>v31.2 (August 2023)</h2>
     <div class="card card-body bg-light mb-3">
@@ -10,7 +27,7 @@
             <li>Mirroring from Zelda's cell spawn point will correctly take you to Sanctuary for glitched modes.</li>
             <li>The heart piece menu icon, file select hearts, and credits hearts now match the selected heart color.</li>
             <li>Major items will be able to appear as dungeon prizes, the logic for this will be coming in a following release.</li>
-            <li>Added a new Completionist goal, requiring every item to be collected before Ganon can be defeated.</li>
+            <li>Added a new Completionist goal, requiring every item to be collected and all dungeons to be completed before Ganon can be defeated.</li>
         </ul>
         <li>Bug Fixes</li>
         <ul>
